@@ -37,3 +37,10 @@ La carpeta `Datos Ejemplo/` (plantilla FIT real) está en `.gitignore`: son dato
 ## Comprobaciones
 
 `./checks.sh` compila con los avisos como errores y pasa los tests. Sin `./checks.sh` en verde no hay commit ni PR.
+
+## Licencia
+
+El código se publica con licencia [MIT](LICENSE) © 2026 Ignacio Suarez. Las librerías de terceros que van dentro del
+ejecutable tienen sus propias licencias: ver [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+La licencia no cubre el logotipo de Alomatek ni las marcas de terceros, que pertenecen a sus dueños.
