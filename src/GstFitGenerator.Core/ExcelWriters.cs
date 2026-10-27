@@ -74,10 +74,22 @@ public static class ExcelWriters
         return book;
     }
 
-    // ---- Plantilla completa.
+    // ---- Plantilla completa, con los colores, fuentes y anchos de la plantilla de siempre (colores del tema
+    // de Office 2023 escritos en RGB para que salgan iguales aunque el libro lleve otro tema).
+    private static readonly XLColor HeaderBlue = XLColor.FromHtml("#156082");
+    private static readonly XLColor TypesBlue = XLColor.FromHtml("#1F4E79");
+    private static readonly XLColor VersionsDateBlue = XLColor.FromHtml("#4E95D9");
+    private static readonly XLColor VersionsTextBlue = XLColor.FromHtml("#A6CAEC");
+    private static readonly XLColor HmiGreen = XLColor.FromHtml("#C2F1C8");
+    private static readonly XLColor StripeGrey = XLColor.FromHtml("#D9D9D9");
+    private const string BodyFont = "Aptos Narrow";
+    private const string HeaderFont = "Calibri";
+
     public static XLWorkbook Template(Project project, Catalog catalog)
     {
         var book = new XLWorkbook();
+        book.Style.Font.FontName = BodyFont;
+        book.Style.Font.FontSize = 11;
         WriteVersions(book.Worksheets.Add("Control Versiones"), project);
         var layout = TemplateLayout.For(project);
         foreach (var reference in project.References.OrderBy(r => r.Number))
@@ -90,11 +102,13 @@ public static class ExcelWriters
         return book;
     }
 
+    // Tabla con doble borde: fecha en D y descripción en E:K combinadas; al menos seis filas, como la de siempre.
     private static void WriteVersions(IXLWorksheet sheet, Project project)
     {
         sheet.Cell(7, 4).Value = "Fecha :";
         sheet.Cell(7, 5).Value = "DESCRIPCIÓN CAMBIOS";
-        sheet.Range(7, 4, 7, 5).Style.Font.Bold = true;
+        sheet.Cell(7, 4).Style.Fill.BackgroundColor = VersionsDateBlue;
+        sheet.Cell(7, 5).Style.Fill.BackgroundColor = VersionsTextBlue;
         var row = 8;
         foreach (var v in project.Versions)
         {
@@ -103,8 +117,18 @@ public static class ExcelWriters
             sheet.Cell(row, 5).Value = v.Description;
             row++;
         }
-        sheet.Column(4).Width = 12;
-        sheet.Column(5).Width = 90;
+        var last = Math.Max(row, 14) - 1;
+        for (var r = 7; r <= last; r++)
+        {
+            sheet.Range(r, 5, r, 11).Merge();
+            sheet.Cell(r, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        }
+        sheet.Cell(7, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        sheet.Cell(7, 5).Style.Alignment.WrapText = true;
+        var table = sheet.Range(7, 4, last, 11).Style.Border;
+        table.OutsideBorder = XLBorderStyleValues.Double;
+        table.InsideBorder = XLBorderStyleValues.Double;
+        sheet.Column(4).Width = 18.8;
     }
 
     private static void WriteReference(IXLWorksheet sheet, Project project, Catalog catalog, Reference reference, TemplateLayout layout)
@@ -113,9 +137,18 @@ public static class ExcelWriters
         {
             sheet.Cell(1, column).Value = header;
         }
-        var headerRow = sheet.Row(1);
-        headerRow.Style.Font.Bold = true;
-        headerRow.Style.Alignment.WrapText = true;
+        sheet.Row(1).Height = 32.25;
+        HeaderStyle(sheet.Range(1, 1, 1, layout.FeatureType + 4));
+        sheet.Range(1, 1, 1, layout.FeatureType + 4).Style.Alignment.WrapText = true;
+        // Cabeceras de las listas del HMI: dos columnas combinadas, en verde y con borde medio.
+        for (var c = layout.HmiLists; c <= layout.HmiLists + 6; c += 2)
+        {
+            var hmiHeader = sheet.Range(1, c, 1, c + 1);
+            hmiHeader.Merge();
+            hmiHeader.Style.Fill.BackgroundColor = HmiGreen;
+            hmiHeader.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+            hmiHeader.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        }
 
         var row = 2;
         foreach (var r in Layout.Rows(project, reference))
@@ -150,6 +183,11 @@ public static class ExcelWriters
             SetNumber(sheet.Cell(row, hmi + 3), f.IsReserve ? 0 : f.FeatureId);
             sheet.Cell(row, hmi + 4).Value = r.Offset;
             sheet.Cell(row, hmi + 5).Value = f.IsReserve || f.Fixtures.Count == 0 ? "" : f.Fixtures[0].LayoutName;
+            // Filas alternas en gris en la parte de datos (de Plant a CriticalFeature).
+            if (row % 2 == 0)
+            {
+                sheet.Range(row, 1, row, layout.Client + 4).Style.Fill.BackgroundColor = StripeGrey;
+            }
             row++;
         }
 
@@ -162,8 +200,25 @@ public static class ExcelWriters
             techRow++;
         }
 
+        sheet.Range(1, 1, Math.Max(row, techRow) - 1, layout.HmiLists + 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        sheet.Range(1, 1, Math.Max(row, techRow) - 1, layout.HmiLists + 7).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         sheet.SheetView.FreezeRows(1);
-        sheet.Columns(1, layout.HmiLists + 7).AdjustToContents(1, Math.Min(row, 200));
+        foreach (var (column, width) in layout.Widths())
+        {
+            sheet.Column(column).Width = width;
+        }
+    }
+
+    // Cabecera azul con letra blanca en negrita, como en las hojas PLC-RefN y PLC-Aux.
+    private static void HeaderStyle(IXLRange range)
+    {
+        range.Style.Font.FontName = HeaderFont;
+        range.Style.Font.Bold = true;
+        range.Style.Font.FontColor = XLColor.White;
+        range.Style.Fill.BackgroundColor = HeaderBlue;
+        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        range.Style.Border.TopBorder = XLBorderStyleValues.Thin;
     }
 
     private static void WriteAux(IXLWorksheet sheet, Project project)
@@ -171,7 +226,8 @@ public static class ExcelWriters
         sheet.Cell(1, 1).Value = "Asset";
         sheet.Cell(1, 2).Value = "Working";
         sheet.Cell(1, 3).Value = "FeatureId";
-        sheet.Row(1).Style.Font.Bold = true;
+        sheet.Row(1).Height = 30;
+        HeaderStyle(sheet.Range(1, 1, 1, 3));
         var row = 2;
         foreach (var aux in project.Auxiliaries)
         {
@@ -180,7 +236,7 @@ public static class ExcelWriters
             SetNumber(sheet.Cell(row, 3), aux.FeatureId);
             row++;
         }
-        sheet.Columns(1, 3).AdjustToContents();
+        sheet.Column(1).Width = 21.8;
     }
 
     private static void WriteScreens(IXLWorksheet sheet, Project project)
@@ -190,7 +246,8 @@ public static class ExcelWriters
             sheet.Cell(i + 1, 1).Value = Screen.Name(project.ScreenPrefix, i + 1);
             sheet.Cell(i + 1, 2).Value = i < project.Screens.Count ? project.Screens[i].Description : "";
         }
-        sheet.Columns(1, 2).AdjustToContents();
+        sheet.Column(1).Width = 26.8;
+        sheet.Column(2).Width = 29.1;
     }
 
     private static void WriteTypes(IXLWorksheet sheet, Project project, Catalog catalog)
@@ -199,7 +256,17 @@ public static class ExcelWriters
         sheet.Cell(1, 2).Value = "Process";
         sheet.Cell(1, 3).Value = "Detail";
         sheet.Cell(1, 4).Value = "Tech PLC";
-        sheet.Row(1).Style.Font.Bold = true;
+        // Esta hoja va entera en Calibri, con la cabecera en azul oscuro, centrada y más grande.
+        sheet.Style.Font.FontName = HeaderFont;
+        sheet.Row(1).Height = 18.75;
+        var header = sheet.Range(1, 1, 1, 4).Style;
+        header.Font.FontSize = 14;
+        header.Font.Bold = true;
+        header.Font.FontColor = XLColor.White;
+        header.Fill.BackgroundColor = TypesBlue;
+        header.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        header.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        header.Alignment.WrapText = true;
         var row = 2;
         foreach (var type in catalog.Types.OrderBy(t => t.Number))
         {
@@ -212,7 +279,12 @@ public static class ExcelWriters
             }
             row++;
         }
-        sheet.Columns(1, 4).AdjustToContents();
+        sheet.Range(2, 1, Math.Max(row - 1, 2), 3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        sheet.Range(2, 1, Math.Max(row - 1, 2), 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        sheet.Column(1).Width = 19.1;
+        sheet.Column(2).Width = 37.9;
+        sheet.Column(3).Width = 24.8;
+        sheet.Column(4).Width = 21.1;
     }
 
     internal static string TypeText(Catalog catalog, Feature feature) =>
@@ -268,5 +340,28 @@ public sealed record TemplateLayout(int FixtureGroups)
         yield return (HmiLists + 2, "CO_Traceability_Tech_ID");
         yield return (HmiLists + 4, "CO_Traceability_Tech_Place");
         yield return (HmiLists + 6, "CO_Traceability_Tech");
+    }
+
+    // Anchos de la plantilla de siempre; los grupos de fixture de más llevan los del grupo 2.
+    public IEnumerable<(int Column, double Width)> Widths()
+    {
+        yield return (1, 9.1);
+        yield return (3, 15.8);
+        for (var g = 1; g <= FixtureGroups; g++)
+        {
+            yield return (FixtureColumn(g), g == 1 ? 13.0 : 12.4);
+            yield return (FixtureColumn(g) + 1, g == 1 ? 14.1 : 15.1);
+        }
+        yield return (Client - 1, 18.0);
+        double[] widths = [18.4, 23.8, 12.8, 12.1, 17.0, 4.8, 13.6, 13.9, 9.1, 12.6, 9.1];
+        for (var i = 0; i < widths.Length; i++)
+        {
+            yield return (Client + i, widths[i]);
+        }
+        double[] hmi = [17.8, 24.1, 18.4, 20.6, 17.6, 18.1, 9.1, 16.8];
+        for (var i = 0; i < hmi.Length; i++)
+        {
+            yield return (HmiLists + i, hmi[i]);
+        }
     }
 }

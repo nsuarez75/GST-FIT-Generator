@@ -148,6 +148,30 @@ public class GenerationTests
     }
 
     [Fact]
+    public void La_plantilla_lleva_los_colores_de_siempre()
+    {
+        var project = FakeProject.Create();
+        project.Versions.Add(new VersionEntry { Date = new DateOnly(2026, 1, 15), Description = "Creación" });
+
+        using var book = ExcelWriters.Template(project, FakeProject.Catalog());
+        var reference = book.Worksheet("PLC-Ref1");
+        var layout = TemplateLayout.For(project);
+
+        Assert.Equal(XLColor.FromHtml("#156082"), reference.Cell(1, 1).Style.Fill.BackgroundColor);
+        Assert.Equal(XLColor.White, reference.Cell(1, 1).Style.Font.FontColor);
+        Assert.True(reference.Cell(1, layout.HmiLists).IsMerged());
+        Assert.Equal(XLColor.FromHtml("#C2F1C8"), reference.Cell(1, layout.HmiLists).Style.Fill.BackgroundColor);
+        Assert.Equal(XLColor.FromHtml("#D9D9D9"), reference.Cell(2, 1).Style.Fill.BackgroundColor);
+        Assert.NotEqual(XLColor.FromHtml("#D9D9D9"), reference.Cell(3, 1).Style.Fill.BackgroundColor);
+        Assert.Equal(XLColor.FromHtml("#1F4E79"), book.Worksheet("Feature Type Table").Cell(1, 1).Style.Fill.BackgroundColor);
+        Assert.Equal(XLColor.FromHtml("#156082"), book.Worksheet("PLC-Aux").Cell(1, 1).Style.Fill.BackgroundColor);
+        var versions = book.Worksheet("Control Versiones");
+        Assert.Equal(XLColor.FromHtml("#4E95D9"), versions.Cell(7, 4).Style.Fill.BackgroundColor);
+        Assert.Equal(XLBorderStyleValues.Double, versions.Cell(8, 4).Style.Border.LeftBorder);
+        Assert.True(versions.Cell(8, 5).IsMerged());
+    }
+
+    [Fact]
     public void Importar_anade_al_catalogo_los_tipos_nuevos_y_avisa_de_los_distintos()
     {
         using var book = ExcelWriters.Template(FakeProject.Create(), FakeProject.Catalog());
