@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\User_Config_Reference_FB.header.awl" LogicalName="User_Config_Reference_FB.header.awl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GstFitGenerator.Tests" />
+  </ItemGroup>
+
+</Project>
