@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.SizesView"
+             x:DataType="vm:SizesViewModel">
+    <DockPanel Margin="24,20">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+            <TextBlock Classes="h1" Text="{l:T 'Tamaños'}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="accent" Command="{Binding CopyCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <c:Icon Kind="copy" />
+                    <TextBlock Text="{l:T 'Copiar constantes'}" />
+                </StackPanel>
+            </Button>
+        </Grid>
+        <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Text="{l:T 'Features más reservas de cada referencia y tecnología: es el valor de las constantes TechNN_Ref_MM que dimensionan los arrays del FB en TIA. «Copiar constantes» las copia como nombre y valor, una por línea.'}" />
+
+        <ScrollViewer HorizontalScrollBarVisibility="Auto">
+            <Border Classes="card" Padding="0" HorizontalAlignment="Left">
+                <StackPanel>
+                    <Border Classes="tablehead">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Classes="columnHeader" Text="{l:T 'REFERENCIA'}" Width="120" />
+                            <ItemsControl ItemsSource="{Binding Headers}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <TextBlock Classes="columnHeader" Text="{Binding}" Width="96" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SizeRow">
+                                <Border BorderBrush="{DynamicResource App.Border}" BorderThickness="0,1,0,0" Padding="14,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Reference}" Width="106" FontWeight="SemiBold" />
+                                        <ItemsControl ItemsSource="{Binding Counts}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="x:Int32">
+                                                    <TextBlock Classes="mono" Text="{Binding}" Width="96" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

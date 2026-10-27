@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.ReferenceView"
+             x:DataType="vm:ReferenceViewModel">
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding AddCommand}" />
+        <KeyBinding Gesture="Alt+Up" Command="{Binding MoveUpCommand}" />
+        <KeyBinding Gesture="Alt+Down" Command="{Binding MoveDownCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+V" Command="{Binding PasteCommand}" />
+    </UserControl.KeyBindings>
+
+    <DockPanel Margin="24,20">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+            <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+            <WrapPanel Grid.Column="1" Orientation="Horizontal" ItemSpacing="8" LineSpacing="8" HorizontalAlignment="Right">
+                <Button Command="{Binding AddCommand}" ToolTip.Tip="{l:T 'Añadir detrás de la seleccionada (Ctrl+Intro)'}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="plus" />
+                        <TextBlock Text="{l:T 'Añadir'}" />
+                    </StackPanel>
+                </Button>
+                <Button Classes="danger" Command="{Binding DeleteCommand}" IsEnabled="{Binding HasSelection}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="trash" />
+                        <TextBlock Text="{l:T 'Eliminar'}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding MoveUpCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="{l:T 'Subir dentro de su tecnología (Alt+↑)'}">
+                    <c:Icon Kind="arrow-up" />
+                </Button>
+                <Button Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="{l:T 'Bajar dentro de su tecnología (Alt+↓)'}">
+                    <c:Icon Kind="arrow-down" />
+                </Button>
+                <Button Command="{Binding PasteCommand}" ToolTip.Tip="{l:T 'Pegar filas copiadas de un Excel (Ctrl+Mayús+V)'}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="clipboard" />
+                        <TextBlock Text="{l:T 'Pegar'}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ToggleFormCommand}" ToolTip.Tip="{l:T 'Mostrar u ocultar la ficha'}">
+                    <c:Icon Kind="panel-right" />
+                </Button>
+                <Button ToolTip.Tip="{l:T 'Más'}">
+                    <c:Icon Kind="more" StrokeWidth="3" />
+                    <Button.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                            <MenuItem Header="{l:T 'Duplicar referencia'}" Command="{Binding DuplicateCommand}" />
+                            <MenuItem Header="{l:T 'Quitar referencia…'}" Command="{Binding RemoveReferenceCommand}" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </WrapPanel>
+        </Grid>
+        <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Text="{l:T 'Agrupadas por tecnología; dentro de cada una, el orden de la lista da el pointer. Arrastra por el asa para reordenar dentro de su tecnología. Doble clic en una fila para ver su ficha.'}" />
+        <TextBlock DockPanel.Dock="Top" Classes="muted" IsVisible="{Binding IsEmpty}" Margin="0,0,0,14"
+                   Text="{l:T 'Todavía no hay features. Pulsa Añadir, pega filas de un Excel o importa una plantilla.'}" />
+
+        <Grid ColumnDefinitions="*,Auto">
+            <!-- Con la ficha abierta la tabla no cabe entera: ancho mínimo y desplazamiento horizontal -->
+            <Border Classes="card" Padding="0">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <DockPanel MinWidth="1080">
+                    <Border DockPanel.Dock="Top" Classes="tablehead">
+                        <Grid ColumnDefinitions="22,74,36,1*,1.8*,140,86,44,1.4*" ColumnSpacing="8">
+                            <TextBlock Grid.Column="1" Classes="columnHeader" Text="OFFSET" />
+                            <TextBlock Grid.Column="2" Classes="columnHeader" Text="PTR" />
+                            <TextBlock Grid.Column="3" Classes="columnHeader" Text="FEATURE REF. CLIENT" />
+                            <TextBlock Grid.Column="4" Classes="columnHeader" Text="PROCESS | FEATURETYPE" />
+                            <TextBlock Grid.Column="5" Classes="columnHeader" Text="LOCATION" />
+                            <TextBlock Grid.Column="6" Classes="columnHeader" Text="FEATUREID" />
+                            <TextBlock Grid.Column="7" Classes="columnHeader" Text="CRIT." />
+                            <TextBlock Grid.Column="8" Classes="columnHeader" Text="{l:T 'UTILLAJES'}" />
+                        </Grid>
+                    </Border>
+                    <ListBox x:Name="Rows" Classes="table" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DoubleTapped="OnRowDoubleTapped">
+                        <ListBox.DataTemplates>
+                            <DataTemplate DataType="vm:BlockHeaderViewModel">
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,2">
+                                    <c:Icon Kind="tag" Width="14" Height="14" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Detail}" Classes="label" FontSize="11.5" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:FeatureRowViewModel">
+                                <Grid ColumnDefinitions="22,74,36,1*,1.8*,140,86,44,1.4*" ColumnSpacing="8">
+                                    <Border Background="Transparent" Cursor="SizeNorthSouth" ToolTip.Tip="{l:T 'Arrastrar para reordenar'}"
+                                            PointerPressed="OnGripPressed" PointerReleased="OnGripReleased">
+                                        <c:Icon Kind="grip" Width="14" Height="14" Foreground="{DynamicResource App.TextMuted}" StrokeWidth="3" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Offset}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Classes="mono label" Text="{Binding Pointer}" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="3" Classes="cell mono" Text="{Binding ClientReference, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReserve}" />
+                                    <ComboBox Grid.Column="4" ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding Type}" HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:TypeOption">
+                                                <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <ComboBox Grid.Column="5" ItemsSource="{Binding LocationOptions}" SelectedItem="{Binding Location}" HorizontalAlignment="Stretch" IsEnabled="{Binding IsFeature}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:LocationOption">
+                                                <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBox Grid.Column="6" Classes="cell mono" Text="{Binding FeatureId, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReserve}" />
+                                    <CheckBox Grid.Column="7" IsChecked="{Binding Critical}" IsEnabled="{Binding IsFeature}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="8" Classes="mono label" Text="{Binding FixturesSummary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding FixturesSummary}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.DataTemplates>
+                    </ListBox>
+                </DockPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ░░ Ficha de la feature seleccionada ░░ -->
+            <Border Grid.Column="1" Classes="card" Width="330" Margin="14,0,0,0" IsVisible="{Binding ShowForm}">
+                <Panel>
+                    <TextBlock Classes="muted" IsVisible="{Binding !HasSelection}" TextWrapping="Wrap"
+                               Text="{l:T 'Selecciona una feature para ver su ficha y sus utillajes.'}" />
+                    <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="10" DataContext="{Binding Selected}" x:DataType="vm:FeatureRowViewModel">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="h2" Text="{Binding ClientReference}" TextTrimming="CharacterEllipsis" />
+                                <Border Grid.Column="1" Classes="pill accent">
+                                    <TextBlock Classes="mono" Text="{Binding Offset}" />
+                                </Border>
+                            </Grid>
+                            <TextBlock Classes="label" Text="FeatureReferenceClient" />
+                            <TextBox Classes="mono" Text="{Binding ClientReference, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReserve}" />
+                            <TextBlock Classes="label" Text="Process | FeatureType" />
+                            <ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding Type}" HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TypeOption">
+                                        <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="6">
+                                <TextBlock Classes="label" Text="Location" />
+                                <TextBlock Grid.Column="1" Classes="label" Text="FeatureId" />
+                                <ComboBox Grid.Row="1" ItemsSource="{Binding LocationOptions}" SelectedItem="{Binding Location}" HorizontalAlignment="Stretch" IsEnabled="{Binding IsFeature}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:LocationOption">
+                                            <TextBlock Text="{Binding Text}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBox Grid.Row="1" Grid.Column="1" Classes="mono" Text="{Binding FeatureId, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReserve}" />
+                            </Grid>
+                            <CheckBox Content="CriticalFeature" IsChecked="{Binding Critical}" IsEnabled="{Binding IsFeature}" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <TextBlock Classes="label" Text="{l:T 'Pointer'}" />
+                                <TextBlock Grid.Column="1" Classes="label" Text="Main Pointer" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <TextBlock Classes="mono" Text="{Binding Pointer}" />
+                                <TextBlock Grid.Column="1" Classes="mono" Text="{Binding MainPointer}" />
+                            </Grid>
+
+                            <Border Classes="divider" Margin="0,4" />
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="caption" Text="{l:T 'UTILLAJES'}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Command="{Binding $parent[UserControl].((vm:ReferenceViewModel)DataContext).AddFixtureCommand}"
+                                        IsEnabled="{Binding IsFeature}" ToolTip.Tip="{l:T 'Añadir utillaje'}">
+                                    <c:Icon Kind="plus" />
+                                </Button>
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Fixtures}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:FixtureRowViewModel">
+                                        <Border Classes="card" Padding="10" Margin="0,0,0,8">
+                                            <Grid ColumnDefinitions="*,*,60,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                                <TextBlock Classes="label" Text="Fixture" FontSize="11" />
+                                                <TextBlock Grid.Column="1" Classes="label" Text="LayoutName" FontSize="11" />
+                                                <TextBlock Grid.Column="2" Classes="label" Text="Working" FontSize="11" />
+                                                <TextBox Grid.Row="1" Classes="mono" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBox Grid.Row="1" Grid.Column="1" Classes="mono" Text="{Binding LayoutName, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBox Grid.Row="1" Grid.Column="2" Classes="mono" Text="{Binding Working, UpdateSourceTrigger=LostFocus}" />
+                                                <Button Grid.Row="1" Grid.Column="3" Classes="ghost" ToolTip.Tip="{l:T 'Quitar utillaje'}"
+                                                        Command="{Binding $parent[UserControl].((vm:ReferenceViewModel)DataContext).RemoveFixtureCommand}" CommandParameter="{Binding}">
+                                                    <c:Icon Kind="x" Width="14" Height="14" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Panel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

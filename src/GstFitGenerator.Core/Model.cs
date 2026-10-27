@@ -134,7 +134,12 @@ public sealed class FeatureType
 // Ajustes de la app (no del proyecto): idioma, tema y último proyecto abierto.
 public sealed class AppSettings
 {
+    public const string ThemeSystem = "system";
+    public const string ThemeLight = "light";
+    public const string ThemeDark = "dark";
+
+    public string Theme { get; set; } = ThemeSystem;
+    // Vacío: el idioma de Windows.
     public string? Language { get; set; }
-    public string? Theme { get; set; }
     public string? LastProject { get; set; }
 }

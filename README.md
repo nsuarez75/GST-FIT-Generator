@@ -2,7 +2,18 @@
 
 Aplicación de escritorio para crear dentro de la propia app los datos del FIT de una pieza (proyectos, referencias, features, tipos de feature, tecnologías, locations y pantallas de trazabilidad) y, a partir de ellos, generar lo mismo que GeneradorFIT: el Excel FIT para la plataforma I4 de GESTAMP y el código de PLC (TIA Portal) del estándar SICAR@GST. Sustituye a la plantilla Excel que antes se rellenaba a mano.
 
-> Estado: núcleo hecho (cálculo, generación e importación de plantillas); falta la interfaz. Ver `TODO.md`.
+> Estado: primera versión completa (núcleo e interfaz), pendiente de probar con datos reales y de la primera release. Ver `TODO.md`.
+
+## Uso
+
+1. **Proyecto**: nombre, revisión, planta y línea. O bien **Importar plantilla** para crearlo a partir de una plantilla Excel de las de antes.
+2. **Catálogo** (común a todos los proyectos): los tipos de feature. En **Tecnologías**, el nombre de cada tecnología (0 a 10) y la tecnología de cada tipo.
+3. **Locations**, **Auxiliares**, **Screen Names** y **Control de versiones**.
+4. **Referencias**: una tabla por referencia, agrupada por tecnología, con el pointer y el offset de cada feature. Se reordena arrastrando por el asa (o con Alt+↑/↓) dentro de su tecnología. «Eliminar» propone convertir la feature en reserva para no mover nada. Se pueden pegar filas de un Excel y duplicar la referencia.
+5. **Tamaños**: las constantes `TechNN_Ref_MM` para TIA, listas para copiar.
+6. **Generar** (F5): plantilla, FIT, `User_TableInfo_DB`, `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus SCL. Antes de escribir enseña qué features han cambiado de posición desde la última generación.
+
+El proyecto se guarda en un archivo `.fitproj` (Guardar como sirve para exportarlo) y el catálogo en `%APPDATA%\GST-FIT-Generator\catalogo.fitcat`. La interfaz está en castellano e inglés y tiene tema claro y oscuro.
 
 ## Documentación
 
@@ -13,7 +24,9 @@ Aplicación de escritorio para crear dentro de la propia app los datos del FIT d
 ## Estructura
 
 - `src/GstFitGenerator.Core`: modelo del proyecto, cálculo de pointers y offsets, edición, tamaños, avisos, generación (plantilla, FIT y código de PLC) e importación de plantillas. Sin dependencias de interfaz.
+- `src/GstFitGenerator.App`: la aplicación (Avalonia), con el estándar de interfaz de GST-LoS-Generator.
 - `tests/GstFitGenerator.Tests`: tests del núcleo con datos inventados.
+- `tests/GstFitGenerator.App.Tests`: tests de la interfaz sin pantalla. Con la variable `GST_SCREENSHOTS` apuntando a una carpeta, dejan ahí capturas de todas las pantallas.
 
 Con la plantilla real de ejemplo, el núcleo genera el FIT, `User_TableInfo_DB`, `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus SCL exactamente iguales que GeneradorFIT V3.0.1.
 

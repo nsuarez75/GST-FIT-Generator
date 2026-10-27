@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.ScreensView"
+             x:DataType="vm:ScreensViewModel">
+    <DockPanel Margin="24,20">
+        <TextBlock DockPanel.Dock="Top" Classes="h1" Text="{l:T 'Screen Names'}" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Text="{l:T 'Las 24 pantallas de trazabilidad del HMI. El nombre se forma con el prefijo; la descripción se escribe a mano.'}" />
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,300" ColumnSpacing="12" Margin="0,0,0,14">
+            <TextBlock Classes="label" Text="{l:T 'Prefijo'}" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Classes="mono" Text="{Binding Prefix, UpdateSourceTrigger=LostFocus}" />
+        </Grid>
+
+        <Border Classes="card" Padding="0" MaxWidth="1000" HorizontalAlignment="Stretch">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="290,*" ColumnSpacing="10">
+                        <TextBlock Classes="columnHeader" Text="{l:T 'NOMBRE'}" />
+                        <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'DESCRIPCIÓN'}" />
+                    </Grid>
+                </Border>
+                <ListBox Classes="table" ItemsSource="{Binding Rows}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ScreenRowViewModel">
+                            <Grid ColumnDefinitions="290,*" ColumnSpacing="10">
+                                <TextBlock Classes="mono" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                <TextBox Grid.Column="1" Classes="cell" Text="{Binding Description, UpdateSourceTrigger=LostFocus}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>

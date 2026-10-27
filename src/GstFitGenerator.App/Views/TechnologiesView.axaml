@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.TechnologiesView"
+             x:DataType="vm:TechnologiesViewModel">
+    <Grid ColumnDefinitions="2*,3*" Margin="24,20" ColumnSpacing="20">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h1" Text="{l:T 'Tecnologías'}" Margin="0,0,0,8" />
+            <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                       Text="{l:T 'Del 0 al 10, como en el PLC. El nombre sale en la lista CO_Traceability_Tech del HMI.'}" />
+            <Border Classes="card" Padding="0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="tablehead">
+                        <Grid ColumnDefinitions="60,*" ColumnSpacing="10">
+                            <TextBlock Classes="columnHeader" Text="{l:T 'Nº'}" />
+                            <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'NOMBRE'}" />
+                        </Grid>
+                    </Border>
+                    <ListBox Classes="table" ItemsSource="{Binding Technologies}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TechnologyRowViewModel">
+                                <Grid ColumnDefinitions="60,*" ColumnSpacing="10">
+                                    <TextBlock Classes="mono" Text="{Binding Number}" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Classes="cell" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+
+        <DockPanel Grid.Column="1">
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{l:T 'Tecnología de cada tipo de feature'}" Margin="0,6,0,8" />
+            <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                       Text="{l:T 'Es la columna Tech PLC de la tabla de tipos. Va con este proyecto; los tipos son comunes y se editan en el catálogo.'}" />
+            <TextBlock DockPanel.Dock="Top" Classes="muted" IsVisible="{Binding HasNoTypes}"
+                       Text="{l:T 'El catálogo está vacío. Añade tipos en Catálogo o importa una plantilla.'}" />
+            <Border Classes="card" Padding="0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Classes="tablehead">
+                        <Grid ColumnDefinitions="60,*,200" ColumnSpacing="10">
+                            <TextBlock Classes="columnHeader" Text="{l:T 'Nº'}" />
+                            <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'PROCESS | FEATURETYPE'}" />
+                            <TextBlock Grid.Column="2" Classes="columnHeader" Text="{l:T 'TECNOLOGÍA'}" />
+                        </Grid>
+                    </Border>
+                    <ListBox Classes="table" ItemsSource="{Binding Types}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TypeTechnologyRowViewModel">
+                                <Grid ColumnDefinitions="60,*,200" ColumnSpacing="10">
+                                    <TextBlock Classes="mono" Text="{Binding Number}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Display}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Display}" />
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding Choices}" SelectedItem="{Binding Technology}" HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:TechnologyChoice">
+                                                <TextBlock Text="{Binding Text}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+    </Grid>
+</UserControl>
