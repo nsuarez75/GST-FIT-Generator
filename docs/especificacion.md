@@ -22,11 +22,11 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 - Proyecto: un archivo `.fitproj` que se guarda donde se quiera y se puede exportar e importar.
 - Catálogo de tipos de feature: común a todos los proyectos. Se exporta e importa.
 - Salida: carpeta elegida por proyecto y recordada.
-- La plantilla generada se llama `<nombre>_FIT_rev<N>_<fecha>.xlsx`, donde N es el número de entradas del control de versiones, y el Excel FIT se llama `<nombre>_FIT_<fecha>.xlsx`.
+- La plantilla generada se llama `<nombre>_FIT_rev<N>_<fecha>.xlsx`, donde N es el número de revisión que el usuario pone a mano en el proyecto (al importar una plantilla se toma de su nombre), y el Excel FIT se llama `<nombre>_FIT_<fecha>.xlsx`.
 
 ## Proyecto
 
-- Tiene un nombre (por ejemplo `REN_FSF`), una planta (`Plant`, columna A) y una línea (`Line`, columna B).
+- Tiene un nombre (por ejemplo `ABC_XYZ`), una planta (`Plant`, columna A) y una línea (`Line`, columna B).
 - Admite hasta 32 referencias, que es el máximo del FB.
 - Tecnologías del proyecto: de la 0 a la 10, con el nombre editable. La 0 es «No technology» y la 10 es la última posible. Dan la lista `CO_Traceability_Tech` (AJ-AK).
 - Cada tipo de feature del catálogo tiene, dentro del proyecto, el número de tecnología que le corresponde.

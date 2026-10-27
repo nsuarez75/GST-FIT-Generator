@@ -3,11 +3,11 @@
 Vocabulario del proyecto. Se completa durante la entrevista inicial.
 
 - **FIT**: documento Excel con todas las features de una pieza para la plataforma I4 de GESTAMP. Hasta ahora lo generaba GeneradorFIT a partir de una plantilla Excel rellenada a mano; esta app crea esos datos desde la propia app.
-- **Proyecto**: conjunto de trabajo de la app; tiene un nombre (p. ej. `REN_FSF`, da nombre a los Excel generados), una planta, una línea y una o más referencias (máximo 32).
+- **Proyecto**: conjunto de trabajo de la app; tiene un nombre (p. ej. `ABC_XYZ`, da nombre a los Excel generados), una planta, una línea y una o más referencias (máximo 32).
 - **Auxiliar**: feature que no pertenece a ninguna referencia (botoneras, HMIs), con Asset, Working y FeatureId (hoja `PLC-Aux`). Sale en el FIT con PartReference 99 y al final de cada `TableInfo`; no cuenta para pointers.
 - **Tamaños**: número de features más reservas de cada referencia y tecnología; es el valor de las constantes `TechNN_Ref_MM` de TIA que dimensionan los arrays.
-- **Planta** (`Plant`): código de la planta (columna A de la plantilla, p. ej. `LAP`).
-- **Línea** (`Line`): código de la línea (columna B, p. ej. `LE5`).
+- **Planta** (`Plant`): código de la planta (columna A de la plantilla, p. ej. `PLT`).
+- **Línea** (`Line`): código de la línea (columna B, p. ej. `L01`).
 - **Referencia** (`PartReference`): cada pieza que fabrica la línea, numerada 1, 2… En la plantilla, una hoja `PLC-RefN` por referencia.
 - **Feature**: cada característica de la pieza que se traza (un cordón, un tack, un perno, un agujero…), con su FeatureReferenceClient, tipo, location, FeatureId y si es crítica.
 - **Fixture / LayoutName (Asset) / Working**: utillaje donde se hace la feature, el robot o puesto que la hace y su número de trabajo. Una feature puede tener uno o más.
