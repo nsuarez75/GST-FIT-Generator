@@ -1,0 +1,30 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:v="using:GstFitGenerator.App.Views"
+             x:Class="GstFitGenerator.App.App"
+             RequestedThemeVariant="Default">
+
+    <!-- Cada editor del panel central según su modelo de vista -->
+    <Application.DataTemplates>
+        <DataTemplate DataType="vm:ProjectEditorViewModel"><v:ProjectEditorView /></DataTemplate>
+        <DataTemplate DataType="vm:TechnologiesViewModel"><v:TechnologiesView /></DataTemplate>
+        <DataTemplate DataType="vm:LocationsViewModel"><v:LocationsView /></DataTemplate>
+        <DataTemplate DataType="vm:ReferenceViewModel"><v:ReferenceView /></DataTemplate>
+        <DataTemplate DataType="vm:AuxiliariesViewModel"><v:AuxiliariesView /></DataTemplate>
+        <DataTemplate DataType="vm:ScreensViewModel"><v:ScreensView /></DataTemplate>
+        <DataTemplate DataType="vm:VersionsViewModel"><v:VersionsView /></DataTemplate>
+        <DataTemplate DataType="vm:SizesViewModel"><v:SizesView /></DataTemplate>
+        <DataTemplate DataType="vm:CatalogViewModel"><v:CatalogView /></DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme DensityStyle="Compact">
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light" Accent="#2563EB" RegionColor="#FFFFFF" ErrorText="#DC2626" />
+                <ColorPaletteResources x:Key="Dark" Accent="#3B82F6" RegionColor="#16181D" ErrorText="#F87171" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
+        <StyleInclude Source="avares://GstFitGenerator/Views/Theme.axaml" />
+    </Application.Styles>
+</Application>

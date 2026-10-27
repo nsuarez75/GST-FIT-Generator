@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.LocationsView"
+             x:DataType="vm:LocationsViewModel">
+    <DockPanel Margin="24,20">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+            <TextBlock Classes="h1" Text="{l:T 'Locations'}" VerticalAlignment="Center" />
+            <WrapPanel Grid.Column="1" Orientation="Horizontal" ItemSpacing="8" LineSpacing="8" HorizontalAlignment="Right">
+                <Button Command="{Binding AddCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="plus" />
+                        <TextBlock Text="{l:T 'Añadir'}" />
+                    </StackPanel>
+                </Button>
+                <Button Classes="danger" Command="{Binding RemoveCommand}" CommandParameter="{Binding Selected}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="trash" />
+                        <TextBlock Text="{l:T 'Eliminar'}" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+        </Grid>
+        <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Text="{l:T 'Al dar de alta las features se elige la location por su nombre; en lo generado se escribe su número.'}" />
+
+        <Border Classes="card" Padding="0" MaxWidth="760" HorizontalAlignment="Stretch">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="3*,100,120" ColumnSpacing="10">
+                        <TextBlock Classes="columnHeader" Text="{l:T 'NOMBRE'}" />
+                        <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'NÚMERO'}" />
+                        <TextBlock Grid.Column="2" Classes="columnHeader" Text="{l:T 'FEATURES'}" />
+                    </Grid>
+                </Border>
+                <ListBox Classes="table" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LocationRowViewModel">
+                            <Grid ColumnDefinitions="3*,100,120" ColumnSpacing="10">
+                                <TextBox Classes="cell" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                                <TextBox Classes="cell mono" Grid.Column="1" Text="{Binding Number, UpdateSourceTrigger=LostFocus}" />
+                                <TextBlock Grid.Column="2" Text="{Binding Uses}" Classes="label" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,103 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GstFitGenerator.App.ViewModels"
+        xmlns:c="using:GstFitGenerator.App.Controls"
+        xmlns:l="using:GstFitGenerator.App"
+        x:Class="GstFitGenerator.App.Views.GenerateWindow"
+        Icon="/Assets/gst-fit-generator.png"
+        x:DataType="vm:GenerateViewModel"
+        Title="{l:T 'Generar'}"
+        Width="980" Height="720" MinWidth="700" MinHeight="500"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Classes="bar" BorderThickness="0,0,0,1" Padding="16,10">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Border Classes="brand">
+                    <c:Icon Kind="zap" Width="17" Height="17" Foreground="White" StrokeWidth="2.4" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                    <TextBlock Classes="caption" Text="{l:T 'PLANTILLA'}" />
+                    <TextBlock Classes="mono" Text="{Binding TemplateFile}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Classes="bar" BorderThickness="0,1,0,0" Padding="16,10">
+            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                <TextBlock Classes="label" Text="{l:T 'Carpeta de salida'}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" Text="{Binding OutputFolder, UpdateSourceTrigger=LostFocus}" Classes="mono" />
+                <Button Grid.Column="2" Command="{Binding PickFolderCommand}" ToolTip.Tip="{l:T 'Elegir…'}">
+                    <c:Icon Kind="folder" />
+                </Button>
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="{l:T 'Cerrar'}" Click="OnClose" IsCancel="True" />
+                    <Button Classes="accent" Command="{Binding GenerateCommand}" IsEnabled="{Binding !IsBusy}" IsDefault="True">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <c:Icon Kind="zap" />
+                            <TextBlock Text="{l:T 'Generar'}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="*,*">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="20,16,10,16" Spacing="14">
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="caption" Text="{l:T 'QUÉ SE GENERA'}" />
+                            <!-- Textos como TextBlock, para que los _ de los nombres no se tomen como atajos de teclado -->
+                            <CheckBox IsChecked="{Binding Template}"><TextBlock Text="{l:T 'Plantilla Excel'}" /></CheckBox>
+                            <CheckBox IsChecked="{Binding FitExcel}"><TextBlock Text="{l:T 'Excel FIT (plataforma I4)'}" /></CheckBox>
+                            <CheckBox IsChecked="{Binding TableInfoDb}"><TextBlock Text="{l:T 'DB User_TableInfo_DB'}" /></CheckBox>
+                            <CheckBox IsChecked="{Binding ConfigReferenceFb}"><TextBlock Text="{l:T 'FB User_Config_Reference_FB'}" /></CheckBox>
+                            <CheckBox IsChecked="{Binding CheckTechDb}"><TextBlock Text="{l:T 'DB CheckTechTemplate_DB y sus SCL'}" /></CheckBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="caption" Text="{l:T 'CONTROL DE VERSIONES'}" />
+                            <CheckBox Content="{l:T 'Añadir una entrada con la fecha de hoy'}" IsChecked="{Binding AddVersion}" />
+                            <TextBox Text="{Binding VersionText}" IsEnabled="{Binding AddVersion}" PlaceholderText="{l:T 'Descripción del cambio'}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card" IsVisible="{Binding HasNotes}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="caption" Text="{l:T 'AVISOS'}" />
+                            <ItemsControl ItemsSource="{Binding Notes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,3">
+                                            <c:Icon Kind="alert" Width="14" Height="14" Foreground="{DynamicResource App.Warn}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <DockPanel Grid.Column="1" Margin="10,16,20,16">
+                <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{l:T 'Cambios de posición desde la última generación'}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap" IsVisible="{Binding IsFirstGeneration}"
+                           Text="{l:T 'Es la primera generación de este proyecto: no hay nada con qué comparar.'}" />
+                <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap" IsVisible="{Binding HasNoChanges}"
+                           Text="{l:T 'Ninguna feature cambia de offset: el PLC y el HMI no se descuadran.'}" />
+                <Border Classes="card" Padding="4" IsVisible="{Binding HasChanges}">
+                    <ListBox ItemsSource="{Binding Changes}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Classes="mono" Text="{Binding}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

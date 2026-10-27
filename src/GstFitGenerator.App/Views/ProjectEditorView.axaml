@@ -1,0 +1,86 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.ProjectEditorView"
+             x:DataType="vm:ProjectEditorViewModel">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24,20" Spacing="18" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <TextBlock Classes="h1" Text="{l:T 'Proyecto'}" />
+
+            <Border Classes="card">
+                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+                    <TextBlock Classes="label" Text="{l:T 'Nombre'}" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="{l:T 'Revisión'}" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="3" Text="{Binding Revision, UpdateSourceTrigger=LostFocus}" />
+
+                    <TextBlock Grid.Row="1" Classes="label" Text="{l:T 'Planta (Plant)'}" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Classes="mono" Text="{Binding Plant, UpdateSourceTrigger=LostFocus}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Classes="label" Text="{l:T 'Línea (Line)'}" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="1" Grid.Column="3" Classes="mono" Text="{Binding Line, UpdateSourceTrigger=LostFocus}" />
+
+                    <TextBlock Grid.Row="2" Classes="label" Text="{l:T 'Plantilla'}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Classes="mono" Text="{Binding TemplateFile}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+                <Border Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ReferenceCount}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Classes="caption" Text="{l:T 'REFERENCIAS'}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="{Binding FeatureCount}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Classes="caption" Text="{l:T 'FEATURES'}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ReserveCount}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Classes="caption" Text="{l:T 'RESERVAS'}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="{Binding AuxiliaryCount}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Classes="caption" Text="{l:T 'AUXILIARES'}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8">
+                <Button Command="{Binding Host.AddReferenceCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="plus" />
+                        <TextBlock Text="{l:T 'Añadir referencia'}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding Host.ImportTemplateCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="file-sheet" />
+                        <TextBlock Text="{l:T 'Importar plantilla…'}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding Host.OpenCatalogCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="book" />
+                        <TextBlock Text="{l:T 'Catálogo de tipos…'}" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+
+            <Border Classes="tip">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <c:Icon Kind="info" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                    <TextBlock Grid.Column="1" TextWrapping="Wrap" Foreground="{DynamicResource App.AccentText}"
+                               Text="{l:T 'Flujo de trabajo: asigna a cada tipo de feature su tecnología (Tecnologías), crea las locations, da de alta las features de cada referencia (o importa una plantilla de las de antes) y genera. Las features se ordenan por tecnología y, dentro de cada una, por el orden de la lista: ese orden es el que da los pointers del PLC.'}" />
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GstFitGenerator.App.ViewModels"
+        xmlns:v="using:GstFitGenerator.App.Views"
+        xmlns:l="using:GstFitGenerator.App"
+        x:Class="GstFitGenerator.App.Views.CatalogWindow"
+        Icon="/Assets/gst-fit-generator.png"
+        x:DataType="vm:CatalogViewModel"
+        Title="{l:T 'Catálogo de tipos de feature'}"
+        Width="900" Height="720" MinWidth="600" MinHeight="420"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Classes="bar" BorderThickness="0,1,0,0" Padding="16,10">
+            <Button Content="{l:T 'Cerrar'}" Click="OnClose" IsCancel="True" IsDefault="True" HorizontalAlignment="Right" Classes="accent" />
+        </Border>
+        <v:CatalogView />
+    </DockPanel>
+</Window>

@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/GstFitGenerator.App/GstFitGenerator.App.csproj" />
     <Project Path="src/GstFitGenerator.Core/GstFitGenerator.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/GstFitGenerator.App.Tests/GstFitGenerator.App.Tests.csproj" />
     <Project Path="tests/GstFitGenerator.Tests/GstFitGenerator.Tests.csproj" />
   </Folder>
 </Solution>

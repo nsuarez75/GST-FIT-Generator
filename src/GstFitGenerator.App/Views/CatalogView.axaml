@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.CatalogView"
+             x:DataType="vm:CatalogViewModel">
+    <DockPanel Margin="24,20">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+            <TextBlock Classes="h1" Text="{l:T 'Catálogo de tipos de feature'}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <WrapPanel Grid.Column="1" Orientation="Horizontal" ItemSpacing="8" LineSpacing="8" HorizontalAlignment="Right">
+                <Button Command="{Binding AddCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="plus" />
+                        <TextBlock Text="{l:T 'Añadir'}" />
+                    </StackPanel>
+                </Button>
+                <Button Classes="danger" Command="{Binding RemoveCommand}" CommandParameter="{Binding Selected}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:Icon Kind="trash" />
+                        <TextBlock Text="{l:T 'Eliminar'}" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ImportCommand}" ToolTip.Tip="{l:T 'Importar catálogo…'}">
+                    <c:Icon Kind="upload" />
+                </Button>
+                <Button Command="{Binding ExportCommand}" ToolTip.Tip="{l:T 'Exportar catálogo…'}">
+                    <c:Icon Kind="download" />
+                </Button>
+            </WrapPanel>
+        </Grid>
+        <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                   Text="{l:T 'Común a todos los proyectos (hoja Feature Type Table). En las features sale como «Process |Detail». La tecnología de cada tipo se asigna en cada proyecto, en Tecnologías.'}" />
+
+        <Border Classes="card" Padding="0">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="80,3*,2*" ColumnSpacing="10">
+                        <TextBlock Classes="columnHeader" Text="NR" />
+                        <TextBlock Grid.Column="1" Classes="columnHeader" Text="PROCESS" />
+                        <TextBlock Grid.Column="2" Classes="columnHeader" Text="DETAIL" />
+                    </Grid>
+                </Border>
+                <ListBox Classes="table" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FeatureTypeRowViewModel">
+                            <Grid ColumnDefinitions="80,3*,2*" ColumnSpacing="10">
+                                <TextBox Classes="cell mono" Text="{Binding Number, UpdateSourceTrigger=LostFocus}" />
+                                <TextBox Grid.Column="1" Classes="cell" Text="{Binding Process, UpdateSourceTrigger=LostFocus}" />
+                                <TextBox Grid.Column="2" Classes="cell" Text="{Binding Detail, UpdateSourceTrigger=LostFocus}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>
