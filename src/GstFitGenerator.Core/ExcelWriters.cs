@@ -14,7 +14,7 @@ public static class ExcelWriters
     public static string FitFileName(Project project, DateOnly date) => $"{BaseName(project)}_FIT_{date:yyyyMMdd}.xlsx";
 
     public static string TemplateFileName(Project project, DateOnly date) =>
-        $"{BaseName(project)}_FIT_rev{project.Versions.Count}_{date:yyyyMMdd}.xlsx";
+        $"{BaseName(project)}_FIT_rev{project.Revision}_{date:yyyyMMdd}.xlsx";
 
     private static string BaseName(Project project)
     {

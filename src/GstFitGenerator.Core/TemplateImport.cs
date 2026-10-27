@@ -25,7 +25,9 @@ public static partial class TemplateImport
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var book = new XLWorkbook(stream);
         var result = Import(book, catalog);
-        result.Project.Name = ProjectName(Path.GetFileNameWithoutExtension(path));
+        var fileName = Path.GetFileNameWithoutExtension(path);
+        result.Project.Name = ProjectName(fileName);
+        result.Project.Revision = Revision(fileName);
         return result;
     }
 
@@ -85,6 +87,13 @@ public static partial class TemplateImport
     {
         var m = ProjectNamePattern().Match(fileName);
         return m.Success ? m.Groups[1].Value : fileName;
+    }
+
+    // ABC_XYZ_FIT_rev3_20260115 -> 3. Sin rev en el nombre, 0.
+    public static int Revision(string fileName)
+    {
+        var m = RevisionPattern().Match(fileName);
+        return m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var rev) ? rev : 0;
     }
 
     private static void ReadTypes(IXLWorksheet sheet, Catalog catalog, ImportResult result)
@@ -299,6 +308,9 @@ public static partial class TemplateImport
 
     [GeneratedRegex(@"^(.+?)_FIT(_|$)", RegexOptions.IgnoreCase)]
     private static partial Regex ProjectNamePattern();
+
+    [GeneratedRegex(@"_rev(\d+)(_|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex RevisionPattern();
 
     [GeneratedRegex(@"^(.*)_Traceability_\d+$")]
     private static partial Regex ScreenPattern();

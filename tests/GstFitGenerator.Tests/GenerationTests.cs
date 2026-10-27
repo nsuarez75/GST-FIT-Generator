@@ -164,12 +164,15 @@ public class GenerationTests
     public void Nombres_de_los_excel()
     {
         var project = FakeProject.Create();
-        project.Versions.AddRange([new VersionEntry(), new VersionEntry()]);
+        project.Revision = 2;
+        project.Versions.Add(new VersionEntry());
         var date = new DateOnly(2026, 10, 27);
 
         Assert.Equal("PRUEBA_FIT_rev2_20261027.xlsx", ExcelWriters.TemplateFileName(project, date));
         Assert.Equal("PRUEBA_FIT_20261027.xlsx", ExcelWriters.FitFileName(project, date));
         Assert.Equal("ABC_XYZ", TemplateImport.ProjectName("ABC_XYZ_FIT_rev3_20260115"));
+        Assert.Equal(3, TemplateImport.Revision("ABC_XYZ_FIT_rev3_20260115"));
+        Assert.Equal(0, TemplateImport.Revision("ABC_XYZ_FIT_20260115"));
     }
 
     [Fact]

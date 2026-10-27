@@ -7,6 +7,8 @@ public sealed class Project
     public string Name { get; set; } = "";
     public string Plant { get; set; } = "";
     public string Line { get; set; } = "";
+    // Número de revisión de la plantilla (el rev del nombre del Excel); lo pone el usuario a mano.
+    public int Revision { get; set; }
     // Tecnologías de la 0 a la 10 con su nombre (lista CO_Traceability_Tech del HMI).
     public List<Technology> Technologies { get; set; } = Technology.Defaults();
     // Tecnología de cada tipo de feature del catálogo (número de tipo -> número de tecnología).
