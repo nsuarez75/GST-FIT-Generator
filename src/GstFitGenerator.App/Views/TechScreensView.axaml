@@ -177,7 +177,7 @@
                     </Button>
                 </Grid>
                 <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                           Text="{l:T 'Pulsa un recuadro para elegirlo y arrástralo para moverlo. Lo que no toques se sigue colocando solo.'}" />
+                           Text="{l:T 'Pulsa un recuadro para elegirlo y arrástralo para moverlo; arrastra su esquina inferior derecha para cambiar su tamaño. Lo que no toques se sigue colocando solo.'}" />
 
                 <Border Classes="card" IsVisible="{Binding HasSelectedBox}">
                     <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10">
@@ -201,6 +201,10 @@
                             <TextBlock Classes="label" Text="{l:T 'Filas por columna'}" />
                             <NumericUpDown Value="{Binding BoxRows}" Minimum="1" Maximum="40" Increment="1" FormatString="0" Width="110"
                                            PlaceholderText="{Binding BoxRowsHint, StringFormat='auto ({0})'}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Tamaño %'}" />
+                            <NumericUpDown Value="{Binding BoxScale}" Minimum="{Binding MinScale}" Maximum="{Binding MaxScale}" Increment="5" FormatString="0" Width="110" />
                         </StackPanel>
                         <StackPanel Spacing="4" IsVisible="{Binding CanSplit}">
                             <TextBlock Classes="label" Text="{l:T 'Partir antes de'}" />

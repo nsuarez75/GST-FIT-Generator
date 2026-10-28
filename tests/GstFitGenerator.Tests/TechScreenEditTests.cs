@@ -150,6 +150,32 @@ public class TechScreenEditTests
     }
 
     [Fact]
+    public void Cambiar_el_tamano_escala_todo_el_recuadro_y_su_xml()
+    {
+        var project = Project();
+        var (page, box) = Find(project, "1000FIX01");
+
+        TechScreenEdits.Resize(project, page, box, 50);
+
+        var plan = TechScreens.Plan(project);
+        var small = plan.Pages[0].Boxes.Single(b => b.Title == "1000FIX01");
+        Assert.Equal((50, box.Left, box.Top, box.RowsPerColumn), (small.Scale, small.Left, small.Top, small.RowsPerColumn));
+        // Los márgenes interiores no se escalan: algo más de la mitad.
+        Assert.True(small.Width < box.Width * 0.7 && small.Height < box.Height * 0.7);
+        Assert.Equal((7, 17, 18), (small.Style.LabelFontSize, small.Style.FaceplateWidth, small.Style.FaceplateHeight));
+        var doc = XDocument.Parse(TechScreenWriter.Write(project, plan, plan.Pages[0]));
+        var faceplate = doc.Descendants("Hmi.Screen.FaceplateInstance")
+            .First(f => f.Element("AttributeList")!.Element("FaceplateTypeName")!.Value.Contains("TechLayout"))
+            .Element("AttributeList")!;
+        Assert.Equal(("17", "18"), (faceplate.Element("Width")!.Value, faceplate.Element("Height")!.Value));
+        // Los demás recuadros no cambian de tamaño.
+        Assert.All(plan.Pages[0].Boxes.Where(b => b != small), b => Assert.Equal(100, b.Scale));
+
+        TechScreenEdits.Resize(project, plan.Pages[0], small, 500);
+        Assert.Equal(TechScreens.MaxScale, Find(project, "1000FIX01").Box.Scale);
+    }
+
+    [Fact]
     public void El_lienzo_y_el_faceplate_cambian_la_colocacion_y_el_xml()
     {
         var project = Project();

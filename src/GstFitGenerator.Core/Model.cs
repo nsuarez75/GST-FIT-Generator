@@ -178,6 +178,8 @@ public sealed class TechBoxPart
     public int? Top { get; set; }
     // Filas por columna; sin ella, las que quepan.
     public int? RowsPerColumn { get; set; }
+    // Tamaño del recuadro en %: letras, faceplates y filas en proporción. Sin él, 100.
+    public int? Scale { get; set; }
 }
 
 // Aspecto de las pantallas de techs. Colores en #RRGGBB; tamaños en píxeles de la pantalla del HMI.

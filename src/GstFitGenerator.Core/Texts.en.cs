@@ -256,7 +256,9 @@ public static partial class L
         ["Abajo"] = "Bottom",
         ["Recolocar todo automáticamente"] = "Re-place everything automatically",
         ["Quita todos los retoques: los recuadros vuelven a colocarse solos"] = "Removes all manual changes: the boxes are placed automatically again",
-        ["Pulsa un recuadro para elegirlo y arrástralo para moverlo. Lo que no toques se sigue colocando solo."] = "Click a box to select it and drag it to move it. Anything you do not touch is still placed automatically.",
+        ["Pulsa un recuadro para elegirlo y arrástralo para moverlo; arrastra su esquina inferior derecha para cambiar su tamaño. Lo que no toques se sigue colocando solo."] =
+            "Click a box to select it and drag it to move it; drag its bottom-right corner to resize it. Anything you do not touch is still placed automatically.",
+        ["Tamaño %"] = "Size %",
         ["Recuadro"] = "Box",
         ["Pantalla"] = "Screen",
         ["Pantalla nueva"] = "New screen",

@@ -50,10 +50,16 @@ public sealed class TechScreenPreview : Control
 
     public event Action<TechScreenBox?>? BoxClicked;
     public event Action<TechScreenBox, int, int>? BoxDragged;
+    // Recuadro escalado desde su esquina: el tamaño nuevo en %.
+    public event Action<TechScreenBox, int>? BoxResized;
 
     private TechScreenBox? _dragging;
+    private bool _resizing;
     private Point _dragStart;
     private Vector _dragOffset;
+
+    // Cuadradito de la esquina inferior derecha para cambiar el tamaño.
+    private const double Handle = 16;
 
     private static readonly IBrush Background = Brushes.White;
     private static readonly IBrush Header = new SolidColorBrush(Color.FromRgb(245, 246, 248));
@@ -74,6 +80,18 @@ public sealed class TechScreenPreview : Control
     private TechScreenBox? HitTest(Point p) =>
         Page?.Boxes.LastOrDefault(b => p.X >= b.Left && p.X <= b.Right && p.Y >= b.Top && p.Y <= b.Bottom);
 
+    // ¿Está el punto en la esquina de cambiar tamaño del recuadro?
+    private static bool OnHandle(TechScreenBox b, Point p) =>
+        p.X >= b.Right - Handle && p.X <= b.Right + 4 && p.Y >= b.Bottom - Handle && p.Y <= b.Bottom + 4;
+
+    // Tamaño en % mientras se arrastra la esquina: la proporción del recuadro se mantiene.
+    private int ResizePercent(TechScreenBox box)
+    {
+        var factor = Math.Max((box.Width + _dragOffset.X) / box.Width, (box.Height + _dragOffset.Y) / box.Height);
+        var percent = (int)Math.Round(box.Scale * factor / 5) * 5;
+        return Math.Clamp(percent, TechScreens.MinScale, TechScreens.MaxScale);
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -82,11 +100,12 @@ public sealed class TechScreenPreview : Control
             return;
         }
         var p = e.GetPosition(this);
-        var box = HitTest(p);
+        var box = Page?.Boxes.LastOrDefault(b => OnHandle(b, p)) ?? HitTest(p);
         BoxClicked?.Invoke(box);
         if (box is not null)
         {
             _dragging = box;
+            _resizing = OnHandle(box, p);
             _dragStart = p;
             _dragOffset = default;
             e.Pointer.Capture(this);
@@ -105,7 +124,9 @@ public sealed class TechScreenPreview : Control
         }
         else
         {
-            Cursor = new Cursor(HitTest(p) is null ? StandardCursorType.Arrow : StandardCursorType.SizeAll);
+            var cursor = Page?.Boxes.Any(b => OnHandle(b, p)) == true ? StandardCursorType.BottomRightCorner
+                : HitTest(p) is null ? StandardCursorType.Arrow : StandardCursorType.SizeAll;
+            Cursor = new Cursor(cursor);
         }
     }
 
@@ -117,11 +138,25 @@ public sealed class TechScreenPreview : Control
             return;
         }
         var offset = _dragOffset;
+        var resizing = _resizing;
+        var percent = ResizePercent(box);
         _dragging = null;
+        _resizing = false;
         _dragOffset = default;
         e.Pointer.Capture(null);
         InvalidateVisual();
-        if (Math.Abs(offset.X) >= DragThreshold || Math.Abs(offset.Y) >= DragThreshold)
+        if (Math.Abs(offset.X) < DragThreshold && Math.Abs(offset.Y) < DragThreshold)
+        {
+            return;
+        }
+        if (resizing)
+        {
+            if (percent != box.Scale)
+            {
+                BoxResized?.Invoke(box, percent);
+            }
+        }
+        else
         {
             BoxDragged?.Invoke(box, box.Left + (int)Math.Round(offset.X), box.Top + (int)Math.Round(offset.Y));
         }
@@ -131,6 +166,7 @@ public sealed class TechScreenPreview : Control
     {
         base.OnPointerCaptureLost(e);
         _dragging = null;
+        _resizing = false;
         _dragOffset = default;
         InvalidateVisual();
     }
@@ -145,15 +181,17 @@ public sealed class TechScreenPreview : Control
         {
             return;
         }
-        var s = page.Style;
-        context.DrawRectangle(null, Canvas, new Rect(s.AreaLeft, s.AreaTop, s.AreaRight - s.AreaLeft, s.AreaBottom - s.AreaTop));
-        var boxBack = Brush(s.BoxBack);
-        var boxBorder = new Pen(Brush(s.BoxBorder), 1);
-        var titleBack = Brush(s.TitleBack);
-        var titleFore = Brush(s.TitleFore);
-        var labelFore = Brush(s.LabelFore);
+        var area = page.Style;
+        context.DrawRectangle(null, Canvas, new Rect(area.AreaLeft, area.AreaTop, area.AreaRight - area.AreaLeft, area.AreaBottom - area.AreaTop));
+        var boxBack = Brush(area.BoxBack);
+        var boxBorder = new Pen(Brush(area.BoxBorder), 1);
+        var titleBack = Brush(area.TitleBack);
+        var titleFore = Brush(area.TitleFore);
+        var labelFore = Brush(area.LabelFore);
         foreach (var box in page.Boxes)
         {
+            // Letras, faceplates y filas del recuadro: las de la pantalla, escaladas si se le cambió el tamaño.
+            var s = box.Style;
             var rect = new Rect(box.Left, box.Top, box.Width, box.Height);
             context.DrawRectangle(boxBack, boxBorder, rect);
             var title = new Rect(box.Left, box.Top, box.Width, s.TitleHeight);
@@ -169,11 +207,22 @@ public sealed class TechScreenPreview : Control
             if (SelectedBox is { } selected && Same(selected, box))
             {
                 context.DrawRectangle(null, Selection, rect.Inflate(2));
+                context.FillRectangle(Selection.Brush!, new Rect(box.Right - Handle + 2, box.Bottom - Handle + 2, Handle, Handle));
             }
             if (_dragging is { } dragging && Same(dragging, box))
             {
-                var snapped = new Point(TechScreenEdits.Snap(box.Left + (int)_dragOffset.X), TechScreenEdits.Snap(box.Top + (int)_dragOffset.Y));
-                context.DrawRectangle(null, Ghost, new Rect(snapped, rect.Size));
+                if (_resizing)
+                {
+                    var percent = ResizePercent(box);
+                    var factor = percent / (double)box.Scale;
+                    context.DrawRectangle(null, Ghost, new Rect(box.Left, box.Top, box.Width * factor, box.Height * factor));
+                    DrawText(context, $"{percent} %", 22, Selection.Brush!, new Rect(box.Left, box.Top + box.Height * factor + 4, 120, 30), center: false);
+                }
+                else
+                {
+                    var snapped = new Point(TechScreenEdits.Snap(box.Left + (int)_dragOffset.X), TechScreenEdits.Snap(box.Top + (int)_dragOffset.Y));
+                    context.DrawRectangle(null, Ghost, new Rect(snapped, rect.Size));
+                }
             }
         }
     }

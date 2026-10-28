@@ -242,6 +242,31 @@ public sealed partial class TechScreensViewModel : EditableViewModel
 
     public int BoxRowsHint => SelectedBox?.RowsPerColumn ?? 0;
 
+    public int MinScale => TechScreens.MinScale;
+    public int MaxScale => TechScreens.MaxScale;
+
+    // Tamaño del recuadro en %: también se cambia arrastrando su esquina en la vista previa.
+    public decimal BoxScale
+    {
+        get => SelectedBox?.Scale ?? 100;
+        set
+        {
+            if (!_selecting && SelectedBox is { } box && (int)value != box.Scale)
+            {
+                OnBoxResized(box, (int)value);
+            }
+        }
+    }
+
+    public void OnBoxResized(TechScreenBox box, int percent)
+    {
+        if (BoxPage is { } page)
+        {
+            _selectedBox = (page.Reference, box.Key, box.Part);
+            EditBox("tech-box-scale", () => TechScreenEdits.Resize(Session.Project, page, box, percent));
+        }
+    }
+
     private int? ManualRows(TechScreenBox box) =>
         Session.Project.TechScreens.BoxEdits.FirstOrDefault(e => e.Reference == BoxPage?.Reference && e.Key == box.Key)?
             .Parts.FirstOrDefault(p => p.Part == box.Part)?.RowsPerColumn;
@@ -322,6 +347,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
             OnPropertyChanged(nameof(BoxTop));
             OnPropertyChanged(nameof(BoxRows));
             OnPropertyChanged(nameof(BoxRowsHint));
+            OnPropertyChanged(nameof(BoxScale));
             OnPropertyChanged(nameof(SplitOptions));
             OnPropertyChanged(nameof(CanSplit));
         }
