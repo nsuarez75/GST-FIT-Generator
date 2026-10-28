@@ -38,8 +38,15 @@ internal sealed class FakeDialogs : IDialogs
         return Task.FromResult((true, true));
     }
 
-    public Task<string[]?> Prompt(string title, IReadOnlyList<string> labels, IReadOnlyList<string> values) =>
-        Task.FromResult<string[]?>(values.ToArray());
+    // Respuesta a los Prompt: sin preparar, se aceptan los valores que proponga el diálogo.
+    public string[]? PromptAnswer { get; set; }
+    public List<string> Prompts { get; } = [];
+
+    public Task<string[]?> Prompt(string title, IReadOnlyList<string> labels, IReadOnlyList<string> values)
+    {
+        Prompts.Add(title + ": " + string.Join(" | ", labels));
+        return Task.FromResult<string[]?>(PromptAnswer ?? values.ToArray());
+    }
 
     public Task<string?> OpenFile(string title, FileFilter filter) => Task.FromResult(Files.Count > 0 ? Files.Dequeue() : null);
 

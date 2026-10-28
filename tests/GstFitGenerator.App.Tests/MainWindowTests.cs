@@ -458,6 +458,43 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Anadir_reservas_desde_la_cabecera_y_desde_el_menu()
+    {
+        var (window, main, dialogs) = await Open();
+        var reference = ShowReference(main);
+        var offsets = reference.Items.OfType<FeatureRowViewModel>().ToDictionary(r => r.Feature, r => r.Offset);
+        BlockHeaderViewModel Header(int technology) => reference.Items.OfType<BlockHeaderViewModel>().Single(h => h.Technology == technology);
+        int Count(int technology) => Layout.Rows(main.Session.Project, reference.Reference).Count(r => r.Technology == technology);
+
+        // Desde la cabecera: solo esa tecnología, al final, y queda seleccionada la última.
+        dialogs.PromptAnswer = ["3"];
+        await Header(2).AddReservesCommand.ExecuteAsync(null);
+        Assert.Contains(dialogs.Prompts, p => p.Contains("Añadir reservas a 02") && p.Contains("ahora 4 posiciones · 1 reservas"));
+        Assert.Equal(7, Count(2));
+        Assert.Equal((true, "0102007"), (reference.Selected!.IsReserve, reference.Selected.Offset));
+        Assert.Equal("7 posiciones · 4 reservas", Header(2).Detail);
+        Assert.All(offsets, o => Assert.Equal(o.Value, Layout.Rows(main.Session.Project, reference.Reference).Single(r => r.Feature == o.Key).Offset));
+        Shot(window, "15-reservas");
+
+        // Desde el menú: en cada tecnología de la referencia.
+        dialogs.PromptAnswer = ["2"];
+        await reference.AddReservesToAllCommand.ExecuteAsync(null);
+        Assert.Equal((9, 3, 3), (Count(2), Count(3), Count(10)));
+
+        // Un número que no vale avisa y no cambia nada; cancelar tampoco.
+        dialogs.PromptAnswer = ["0"];
+        await Header(3).AddReservesCommand.ExecuteAsync(null);
+        Assert.Contains(dialogs.Messages, m => m.Contains("entre 1 y 999"));
+        dialogs.PromptAnswer = null;
+        Assert.Equal(3, Count(3));
+
+        // Se deshace de una vez.
+        main.UndoCommand.Execute(null);
+        reference = Assert.IsType<ReferenceViewModel>(main.Editor);
+        Assert.Equal(7, Layout.Rows(main.Session.Project, reference.Reference).Count(r => r.Technology == 2));
+    }
+
+    [AvaloniaFact]
     public async Task Solo_se_puede_soltar_en_la_misma_tecnologia()
     {
         var (_, main, _) = await Open();
