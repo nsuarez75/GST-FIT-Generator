@@ -59,6 +59,53 @@
                 </Border>
             </Grid>
 
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="caption" Text="{l:T 'ESTILO'}" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Command="{Binding ResetStyleCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <c:Icon Kind="undo" />
+                                <TextBlock Text="{l:T 'Restaurar estilo por defecto'}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10">
+                        <ItemsControl ItemsSource="{Binding Colors}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StyleColorViewModel">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="label" Text="{Binding Label}" />
+                                        <ColorPicker Color="{Binding Color}" IsAlphaEnabled="False" IsAlphaVisible="False" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Letra del título'}" />
+                            <NumericUpDown Value="{Binding TitleFontSize}" Minimum="{Binding MinFontSize}" Maximum="{Binding MaxFontSize}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Letra de las filas'}" />
+                            <NumericUpDown Value="{Binding LabelFontSize}" Minimum="{Binding MinFontSize}" Maximum="{Binding MaxFontSize}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Alto de fila'}" />
+                            <NumericUpDown Value="{Binding RowHeight}" Minimum="{Binding MinRowHeight}" Maximum="{Binding MaxRowHeight}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Separación entre recuadros'}" />
+                            <NumericUpDown Value="{Binding BoxGap}" Minimum="0" Maximum="{Binding MaxBoxGap}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
             <Border Classes="card" IsVisible="{Binding HasErrors}">
                 <ItemsControl ItemsSource="{Binding Errors}">
                     <ItemsControl.ItemTemplate>

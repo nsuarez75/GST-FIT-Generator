@@ -85,7 +85,7 @@ public class TechScreenTests
     public void Una_columna_larga_sigue_al_lado()
     {
         var project = WithStart();
-        for (var i = 0; i < TechScreens.RowsPerColumn + 5; i++)
+        for (var i = 0; i < TechScreens.RowsPerColumn(new TechScreenStyle()) + 5; i++)
         {
             project.References[0].Features.Add(FakeProject.Make($"X{i}", 1, 20000 + i, FakeProject.Fx("5000FIX01", "5000R1")));
         }
@@ -259,4 +259,48 @@ public class TechScreenTests
             .Descendants("Hmi.Event.FunctionListEntryParameter")
             .Single(p => p.Element("AttributeList")!.Element("Name")!.Value == "Screen name")
             .Descendants("Value").Single().Element("Name")!.Value;
+
+    [Fact]
+    public void El_estilo_cambia_colores_letras_y_separaciones()
+    {
+        var project = WithStart();
+        var style = project.TechScreens.Style;
+        style.BoxBack = "#102030";
+        style.TitleFore = "#FF0000";
+        style.LabelFontSize = 20;
+        style.RowHeight = 50;
+        var plan = TechScreens.Plan(project);
+        var page = plan.Pages[0];
+
+        var rows = page.Boxes[0].Rows;
+        Assert.Equal(50, rows[1].Top - rows[0].Top);
+        var doc = XDocument.Parse(TechScreenWriter.Write(project, plan, page));
+        var rect = doc.Descendants("Hmi.Screen.Rectangle").First();
+        Assert.Equal("16, 32, 48", rect.Element("AttributeList")!.Element("BackColor")!.Value);
+        var title = doc.Descendants("Hmi.Screen.TextField").First(t => t.Element("AttributeList")!.Element("ObjectName")!.Value == "txtBox_1");
+        Assert.Equal("255, 0, 0", title.Element("AttributeList")!.Element("ForeColor")!.Value);
+        var label = doc.Descendants("Hmi.Screen.TextField").First(t => t.Element("AttributeList")!.Element("ObjectName")!.Value == "txtTech_1");
+        Assert.All(label.Descendants("FontSize"), f => Assert.Equal("20", f.Value));
+    }
+
+    [Fact]
+    public void Un_estilo_fuera_de_rango_se_ajusta()
+    {
+        var project = WithStart();
+        project.TechScreens.Style.RowHeight = 10;
+        project.TechScreens.Style.LabelFontSize = 200;
+
+        var style = TechScreens.Plan(project).Pages[0].Style;
+
+        Assert.Equal((TechScreens.FaceplateHeight + 1, TechScreenStyle.MaxFontSize), (style.RowHeight, style.LabelFontSize));
+    }
+
+    [Fact]
+    public void Un_proyecto_sin_estilo_guardado_usa_el_de_por_defecto()
+    {
+        var project = Storage.FromJson<Project>("""{ "name": "X", "techScreens": { "referenceStarts": { "1": 7 } } }""");
+
+        Assert.Equal(new TechScreenStyle().BoxBack, project.TechScreens.Style.BoxBack);
+        Assert.Equal(7, project.TechScreens.ReferenceStarts[1]);
+    }
 }

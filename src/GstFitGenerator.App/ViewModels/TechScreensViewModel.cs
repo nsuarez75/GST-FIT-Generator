@@ -50,6 +50,73 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         {
             ShortNames.Add(new ShortNameRowViewModel(session, "Asset", name, Refresh));
         }
+        Colors =
+        [
+            new(session, L.T("Fondo del recuadro"), s => s.BoxBack, (s, v) => s.BoxBack = v, Refresh),
+            new(session, L.T("Borde del recuadro"), s => s.BoxBorder, (s, v) => s.BoxBorder = v, Refresh),
+            new(session, L.T("Franja del título"), s => s.TitleBack, (s, v) => s.TitleBack = v, Refresh),
+            new(session, L.T("Texto del título"), s => s.TitleFore, (s, v) => s.TitleFore = v, Refresh),
+            new(session, L.T("Texto de las filas"), s => s.LabelFore, (s, v) => s.LabelFore = v, Refresh),
+        ];
+        Refresh();
+    }
+
+    // ---------------------------------------------------------------- estilo
+
+    private TechScreenStyle Style => Session.Project.TechScreens.Style;
+
+    public IReadOnlyList<StyleColorViewModel> Colors { get; }
+
+    public int MinFontSize => TechScreenStyle.MinFontSize;
+    public int MaxFontSize => TechScreenStyle.MaxFontSize;
+    public int MinRowHeight => TechScreens.FaceplateHeight + 1;
+    public int MaxRowHeight => TechScreenStyle.MaxRowHeight;
+    public int MaxBoxGap => TechScreenStyle.MaxBoxGap;
+
+    public decimal TitleFontSize
+    {
+        get => Style.TitleFontSize;
+        set => EditStyle(Style.TitleFontSize, value, (s, v) => s.TitleFontSize = v);
+    }
+
+    public decimal LabelFontSize
+    {
+        get => Style.LabelFontSize;
+        set => EditStyle(Style.LabelFontSize, value, (s, v) => s.LabelFontSize = v);
+    }
+
+    public decimal RowHeight
+    {
+        get => Style.RowHeight;
+        set => EditStyle(Style.RowHeight, value, (s, v) => s.RowHeight = v);
+    }
+
+    public decimal BoxGap
+    {
+        get => Style.BoxGap;
+        set => EditStyle(Style.BoxGap, value, (s, v) => s.BoxGap = v);
+    }
+
+    private void EditStyle(int current, decimal value, Action<TechScreenStyle, int> set, [System.Runtime.CompilerServices.CallerMemberName] string? property = null)
+    {
+        if (Edit(current, (int)value, v => set(Style, v), property))
+        {
+            Refresh();
+        }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void ResetStyle()
+    {
+        Session.Change("tech-style-reset", () => Session.Project.TechScreens.Style = new());
+        OnPropertyChanged(nameof(TitleFontSize));
+        OnPropertyChanged(nameof(LabelFontSize));
+        OnPropertyChanged(nameof(RowHeight));
+        OnPropertyChanged(nameof(BoxGap));
+        foreach (var color in Colors)
+        {
+            color.Refresh();
+        }
         Refresh();
     }
 
@@ -155,6 +222,31 @@ public sealed class ShortNameRowViewModel(Session session, string kind, string n
             Session.Project.TechScreens.ShortNames.Remove(Name);
         }
     }
+}
+
+// Un color del estilo de las pantallas, para el selector de color.
+public sealed class StyleColorViewModel(Session session, string label, Func<TechScreenStyle, string> get, Action<TechScreenStyle, string> set, Action changed)
+    : EditableViewModel(session)
+{
+    public string Label { get; } = label;
+
+    public Avalonia.Media.Color Color
+    {
+        get
+        {
+            var (r, g, b) = TechScreenColors.Parse(get(Session.Project.TechScreens.Style));
+            return Avalonia.Media.Color.FromRgb(r, g, b);
+        }
+        set
+        {
+            if (Edit(get(Session.Project.TechScreens.Style), TechScreenColors.Format(value.R, value.G, value.B), v => set(Session.Project.TechScreens.Style, v)))
+            {
+                changed();
+            }
+        }
+    }
+
+    public void Refresh() => OnPropertyChanged(nameof(Color));
 }
 
 public sealed record TechPageOption(TechScreenPage Page, string Name, string Description)

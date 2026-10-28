@@ -20,6 +20,8 @@ public sealed class TechScreenPage
     // Referencia de la pantalla; 0 en las de reservas.
     public int Reference { get; init; }
     public bool IsReserves => Reference == 0;
+    // Estilo con el que se ha repartido; el XML y la vista previa lo usan para colores y letras.
+    public TechScreenStyle Style { get; init; } = new();
     public List<TechScreenBox> Boxes { get; } = [];
 
     // Texto para la descripción de Screen Names cuando está vacía.
@@ -48,43 +50,52 @@ public static class TechScreens
     public const int AreaRight = 1904;
     public const int AreaBottom = 840;
 
-    public const int TitleHeight = 28;
     public const int Padding = 8;
-    public const int RowHeight = 40;
-    public const int LabelHeight = 25;
     public const int FaceplateWidth = 34;
     public const int FaceplateHeight = 35;
     public const int LabelGap = 6;
     public const int ColumnGap = 16;
-    public const int BoxGap = 12;
-    // Ancho aproximado de un carácter del texto de fila (Tahoma 14 negrita).
-    public const int CharWidth = 9;
 
     public const string NoFixture = "Sin fixture";
 
-    public static int RowsPerColumn => (AreaBottom - AreaTop - TitleHeight - 2 * Padding) / RowHeight;
+    public static int RowsPerColumn(TechScreenStyle s) => (AreaBottom - AreaTop - s.TitleHeight - 2 * Padding) / s.RowHeight;
+
+    // Estilo con los valores dentro de lo que se puede dibujar: letras de 8 a 30 y filas más altas que el faceplate.
+    public static TechScreenStyle Clamp(TechScreenStyle style) => new()
+    {
+        BoxBack = style.BoxBack,
+        BoxBorder = style.BoxBorder,
+        TitleBack = style.TitleBack,
+        TitleFore = style.TitleFore,
+        LabelFore = style.LabelFore,
+        TitleFontSize = Math.Clamp(style.TitleFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
+        LabelFontSize = Math.Clamp(style.LabelFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
+        RowHeight = Math.Clamp(style.RowHeight, FaceplateHeight + 1, TechScreenStyle.MaxRowHeight),
+        BoxGap = Math.Clamp(style.BoxGap, 0, TechScreenStyle.MaxBoxGap),
+    };
 
     public static TechScreenPlan Plan(Project project)
     {
         var plan = new TechScreenPlan();
         var settings = project.TechScreens;
+        var style = Clamp(settings.Style);
         var chains = new List<(int Start, int Reference, List<Box> Boxes)>();
         foreach (var reference in project.References.OrderBy(r => r.Number))
         {
             if (settings.ReferenceStarts.TryGetValue(reference.Number, out var start))
             {
-                chains.Add((start, reference.Number, ReferenceBoxes(project, reference, plan)));
+                chains.Add((start, reference.Number, ReferenceBoxes(project, reference, plan, style)));
             }
         }
         if (settings.ReservesStart is int reservesStart)
         {
-            chains.Add((reservesStart, 0, ReserveBoxes(project)));
+            chains.Add((reservesStart, 0, ReserveBoxes(project, style)));
         }
 
         var nextFree = 1;
         foreach (var (start, reference, boxes) in chains.OrderBy(c => c.Start).ThenBy(c => c.Reference == 0).ThenBy(c => c.Reference))
         {
-            var pages = Pack(boxes);
+            var pages = Pack(boxes, style);
             if (pages.Count == 0)
             {
                 continue;
@@ -102,7 +113,7 @@ public static class TechScreens
             }
             for (var i = 0; i < pages.Count && first + i <= Screen.Count; i++)
             {
-                var page = new TechScreenPage { Number = first + i, Reference = reference };
+                var page = new TechScreenPage { Number = first + i, Reference = reference, Style = style };
                 page.Boxes.AddRange(pages[i]);
                 plan.Pages.Add(page);
             }
@@ -127,7 +138,6 @@ public static class TechScreens
         return changed;
     }
 
-
     // ---------------------------------------------------------------- recuadros
 
     // Recuadro antes de colocarlo: título y sus grupos (cada Asset, o la tecnología en las reservas) con sus filas
@@ -138,7 +148,7 @@ public static class TechScreens
 
     // Un recuadro por Fixture en el orden de la lista; dentro, un grupo por Asset ordenados por nombre y las filas
     // por Main Pointer. La feature sale una sola vez, en su primer Fixture.
-    private static List<Box> ReferenceBoxes(Project project, Reference reference, TechScreenPlan plan)
+    private static List<Box> ReferenceBoxes(Project project, Reference reference, TechScreenPlan plan, TechScreenStyle s)
     {
         var shortNames = project.TechScreens;
         var rows = Layout.Rows(project, reference).Where(r => r.Technology != 0 && !r.Feature.IsReserve).ToList();
@@ -158,7 +168,7 @@ public static class TechScreens
                     .Select(r => new Item(RowText(shortNames, asset.Key, r.Feature.ClientReference), reference.Number, r.Technology, r.Pointer, r.MainPointer))
                     .ToList())
                 .ToList();
-            boxes.AddRange(SplitWide(title, groups));
+            boxes.AddRange(SplitWide(title, groups, s));
         }
         return boxes;
     }
@@ -167,7 +177,7 @@ public static class TechScreens
         asset.Length > 0 ? $"{settings.ShortName(asset)} - {client}" : client;
 
     // Un recuadro por referencia y tecnología con sus reservas; el texto es «Tecnología - Pointer».
-    private static List<Box> ReserveBoxes(Project project)
+    private static List<Box> ReserveBoxes(Project project, TechScreenStyle s)
     {
         var boxes = new List<Box>();
         foreach (var reference in project.References.OrderBy(r => r.Number))
@@ -178,7 +188,7 @@ public static class TechScreens
                 var items = tech.OrderBy(r => r.Pointer)
                     .Select(r => new Item(string.Create(CultureInfo.InvariantCulture, $"{name} - {r.Pointer}"), reference.Number, r.Technology, r.Pointer, r.MainPointer))
                     .ToList();
-                boxes.AddRange(SplitWide($"Ref{reference.Number} · {name}", [items]));
+                boxes.AddRange(SplitWide($"Ref{reference.Number} · {name}", [items], s));
             }
         }
         return boxes;
@@ -196,13 +206,13 @@ public static class TechScreens
 
     // Un recuadro más ancho que la pantalla, con las columnas más altas posibles, sigue en otro con el título
     // «(cont.)». Se parte entre grupos; un grupo no se parte.
-    private static IEnumerable<Box> SplitWide(string title, List<List<Item>> groups)
+    private static IEnumerable<Box> SplitWide(string title, List<List<Item>> groups, TechScreenStyle s)
     {
         var current = new List<List<Item>>();
         var part = 0;
         foreach (var group in groups)
         {
-            if (current.Count > 0 && Width(Columns(new Box(title, [.. current, group]), RowsPerColumn)) > AreaRight - AreaLeft)
+            if (current.Count > 0 && Width(Columns(new Box(title, [.. current, group]), RowsPerColumn(s)), s) > AreaRight - AreaLeft)
             {
                 yield return new Box(part++ == 0 ? title : $"{title} (cont.)", current);
                 current = [];
@@ -215,15 +225,15 @@ public static class TechScreens
         }
     }
 
-    private static int LabelWidth(List<Item> column) => Math.Max(60, column.Max(i => i.Text.Length) * CharWidth + 6);
+    private static int LabelWidth(List<Item> column, TechScreenStyle s) => Math.Max(60, column.Max(i => i.Text.Length) * s.CharWidth + 6);
 
-    private static int ColumnWidth(List<Item> column) => LabelWidth(column) + LabelGap + FaceplateWidth;
+    private static int ColumnWidth(List<Item> column, TechScreenStyle s) => LabelWidth(column, s) + LabelGap + FaceplateWidth;
 
-    private static int Width(List<List<Item>> columns) =>
-        2 * Padding + columns.Sum(ColumnWidth) + ColumnGap * (columns.Count - 1);
+    private static int Width(List<List<Item>> columns, TechScreenStyle s) =>
+        2 * Padding + columns.Sum(c => ColumnWidth(c, s)) + ColumnGap * (columns.Count - 1);
 
-    private static int Height(List<List<Item>> columns) =>
-        TitleHeight + 2 * Padding + columns.Max(c => c.Count) * RowHeight - (RowHeight - FaceplateHeight);
+    private static int Height(List<List<Item>> columns, TechScreenStyle s) =>
+        s.TitleHeight + 2 * Padding + columns.Max(c => c.Count) * s.RowHeight - (s.RowHeight - FaceplateHeight);
 
     // ---------------------------------------------------------------- colocación
 
@@ -239,21 +249,21 @@ public static class TechScreens
     // Coloca los recuadros en orden, cada uno en el hueco libre más arriba (y luego más a la izquierda). Si no cabe
     // con las columnas más altas, prueba con columnas más bajas (más anchas); si aun así no cabe, pantalla nueva.
     // Un recuadro no se parte entre pantallas.
-    private static List<List<TechScreenBox>> Pack(List<Box> boxes)
+    private static List<List<TechScreenBox>> Pack(List<Box> boxes, TechScreenStyle s)
     {
         var pages = new List<List<TechScreenBox>>();
         var page = new List<TechScreenBox>();
         foreach (var box in boxes)
         {
-            var placed = TryPlace(box, page);
+            var placed = TryPlace(box, page, s);
             if (placed is null && page.Count > 0)
             {
                 pages.Add(page);
                 page = [];
-                placed = TryPlace(box, page);
+                placed = TryPlace(box, page, s);
             }
             // En una pantalla vacía siempre se coloca, aunque se salga (un recuadro enorme): mejor verlo que perderlo.
-            page.Add(placed ?? Place(box, Columns(box, RowsPerColumn), AreaLeft, AreaTop));
+            page.Add(placed ?? Place(box, Columns(box, RowsPerColumn(s)), AreaLeft, AreaTop, s));
         }
         if (page.Count > 0)
         {
@@ -262,17 +272,17 @@ public static class TechScreens
         return pages;
     }
 
-    private static TechScreenBox? TryPlace(Box box, List<TechScreenBox> page)
+    private static TechScreenBox? TryPlace(Box box, List<TechScreenBox> page, TechScreenStyle s)
     {
         var taken = page.Select(b => new Rect(b.Left, b.Top, b.Width, b.Height)).ToList();
         var maxRows = box.Groups.Max(g => g.Count);
-        for (var rows = Math.Min(RowsPerColumn, maxRows); rows >= Math.Min(MinRowsPerColumn, maxRows); rows--)
+        for (var rows = Math.Min(RowsPerColumn(s), maxRows); rows >= Math.Min(MinRowsPerColumn, maxRows); rows--)
         {
             var columns = Columns(box, rows);
-            var (w, h) = (Width(columns), Height(columns));
-            if (FindSpot(taken, w, h) is { } spot)
+            var (w, h) = (Width(columns, s), Height(columns, s));
+            if (FindSpot(taken, w, h, s.BoxGap) is { } spot)
             {
-                return Place(box, columns, spot.Left, spot.Top);
+                return Place(box, columns, spot.Left, spot.Top, s);
             }
         }
         return null;
@@ -280,19 +290,19 @@ public static class TechScreens
 
     // Hueco libre más arriba y más a la izquierda para un recuadro de w x h. Se prueban la esquina de la zona y,
     // por cada recuadro ya colocado, a su derecha y debajo.
-    private static Rect? FindSpot(List<Rect> taken, int w, int h)
+    private static Rect? FindSpot(List<Rect> taken, int w, int h, int gap)
     {
         var candidates = new List<(int X, int Y)> { (AreaLeft, AreaTop) };
         foreach (var r in taken)
         {
-            candidates.Add((r.Right + BoxGap, r.Top));
-            candidates.Add((r.Left, r.Bottom + BoxGap));
-            candidates.Add((AreaLeft, r.Bottom + BoxGap));
+            candidates.Add((r.Right + gap, r.Top));
+            candidates.Add((r.Left, r.Bottom + gap));
+            candidates.Add((AreaLeft, r.Bottom + gap));
         }
         foreach (var (x, y) in candidates.Distinct().OrderBy(c => c.Y).ThenBy(c => c.X))
         {
             var spot = new Rect(x, y, w, h);
-            if (spot.Right <= AreaRight && spot.Bottom <= AreaBottom && !taken.Any(t => Overlaps(t, spot)))
+            if (spot.Right <= AreaRight && spot.Bottom <= AreaBottom && !taken.Any(t => Overlaps(t, spot, gap)))
             {
                 return spot;
             }
@@ -300,28 +310,27 @@ public static class TechScreens
         return null;
     }
 
-    private static bool Overlaps(Rect a, Rect b) =>
-        a.Left < b.Right + BoxGap && b.Left < a.Right + BoxGap && a.Top < b.Bottom + BoxGap && b.Top < a.Bottom + BoxGap;
+    private static bool Overlaps(Rect a, Rect b, int gap) =>
+        a.Left < b.Right + gap && b.Left < a.Right + gap && a.Top < b.Bottom + gap && b.Top < a.Bottom + gap;
 
-    private static TechScreenBox Place(Box box, List<List<Item>> columns, int left, int top)
+    private static TechScreenBox Place(Box box, List<List<Item>> columns, int left, int top, TechScreenStyle s)
     {
         var rows = new List<TechScreenRow>();
         var x = left + Padding;
         foreach (var column in columns)
         {
-            var labelWidth = LabelWidth(column);
-            var y = top + TitleHeight + Padding;
+            var labelWidth = LabelWidth(column, s);
+            var y = top + s.TitleHeight + Padding;
             foreach (var item in column)
             {
                 rows.Add(new TechScreenRow(item.Text, item.Reference, item.Technology, item.Pointer, item.MainPointer, x, y, labelWidth));
-                y += RowHeight;
+                y += s.RowHeight;
             }
             x += labelWidth + LabelGap + FaceplateWidth + ColumnGap;
         }
-        return new TechScreenBox(box.Title, left, top, Width(columns), Height(columns), rows);
+        return new TechScreenBox(box.Title, left, top, Width(columns, s), Height(columns, s), rows);
     }
 }
-
 
 // Orden por nombre con los números en su orden: 5000R2 antes que 5000R10.
 public sealed class NaturalComparer : IComparer<string>

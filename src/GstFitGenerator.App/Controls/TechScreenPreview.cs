@@ -7,8 +7,8 @@ using GstFitGenerator.Core;
 namespace GstFitGenerator.App.Controls;
 
 // Vista previa de una pantalla de techs a tamaño real (1920x966): se mete en un Viewbox para que quepa. Dibuja lo
-// mismo que se escribe en el XML: recuadros, títulos, textos y un cuadrado por faceplate. Los colores son los del
-// HMI, no los del tema de la app.
+// mismo que se escribe en el XML: recuadros, títulos, textos y un cuadrado por faceplate, con el estilo de la
+// pantalla. Los colores son los del HMI, no los del tema de la app.
 public sealed class TechScreenPreview : Control
 {
     public const int ScreenWidth = 1920;
@@ -37,12 +37,8 @@ public sealed class TechScreenPreview : Control
 
     private static readonly IBrush Background = Brushes.White;
     private static readonly IBrush Header = new SolidColorBrush(Color.FromRgb(245, 246, 248));
+    private static readonly IBrush HeaderText = new SolidColorBrush(Color.FromRgb(35, 45, 60));
     private static readonly IPen Line = new Pen(new SolidColorBrush(Color.FromRgb(120, 125, 135)), 2);
-    private static readonly IBrush BoxBack = new SolidColorBrush(Color.FromRgb(238, 241, 245));
-    private static readonly IPen BoxBorder = new Pen(new SolidColorBrush(Color.FromRgb(176, 186, 200)), 1);
-    private static readonly IBrush TitleBack = new SolidColorBrush(Color.FromRgb(214, 222, 232));
-    private static readonly IBrush TitleFore = new SolidColorBrush(Color.FromRgb(35, 45, 60));
-    private static readonly IBrush LabelFore = new SolidColorBrush(Color.FromRgb(49, 52, 74));
     private static readonly IBrush Faceplate = new SolidColorBrush(Color.FromRgb(150, 200, 160));
     private static readonly IPen FaceplateBorder = new Pen(new SolidColorBrush(Color.FromRgb(70, 110, 80)), 1);
     private static readonly Typeface Font = new("Tahoma", FontStyle.Normal, FontWeight.Bold);
@@ -54,26 +50,37 @@ public sealed class TechScreenPreview : Control
         context.FillRectangle(Background, new Rect(0, 0, ScreenWidth, ScreenHeight));
         context.FillRectangle(Header, new Rect(0, 0, ScreenWidth, HeaderHeight));
         context.DrawLine(Line, new Point(0, HeaderHeight), new Point(ScreenWidth, HeaderHeight));
-        DrawText(context, Title, 26, TitleFore, new Rect(585, 3, 750, 80), center: true);
+        DrawText(context, Title, 26, HeaderText, new Rect(585, 3, 750, 80), center: true);
         if (Page is not { } page)
         {
             return;
         }
+        var s = page.Style;
+        var boxBack = Brush(s.BoxBack);
+        var boxBorder = new Pen(Brush(s.BoxBorder), 1);
+        var titleBack = Brush(s.TitleBack);
+        var titleFore = Brush(s.TitleFore);
+        var labelFore = Brush(s.LabelFore);
         foreach (var box in page.Boxes)
         {
-            var rect = new Rect(box.Left, box.Top, box.Width, box.Height);
-            context.DrawRectangle(BoxBack, BoxBorder, rect);
-            var title = new Rect(box.Left, box.Top, box.Width, TechScreens.TitleHeight);
-            context.FillRectangle(TitleBack, title);
-            DrawText(context, box.Title, 15, TitleFore, title, center: true);
+            context.DrawRectangle(boxBack, boxBorder, new Rect(box.Left, box.Top, box.Width, box.Height));
+            var title = new Rect(box.Left, box.Top, box.Width, s.TitleHeight);
+            context.FillRectangle(titleBack, title);
+            DrawText(context, box.Title, s.TitleFontSize, titleFore, title, center: true);
             foreach (var row in box.Rows)
             {
-                var label = new Rect(row.Left, row.Top + (TechScreens.FaceplateHeight - TechScreens.LabelHeight) / 2.0, row.LabelWidth, TechScreens.LabelHeight);
-                DrawText(context, row.Text, 14, LabelFore, label, center: false);
+                var label = new Rect(row.Left, row.Top + (TechScreens.FaceplateHeight - s.LabelHeight) / 2.0, row.LabelWidth, s.LabelHeight);
+                DrawText(context, row.Text, s.LabelFontSize, labelFore, label, center: false);
                 var faceplate = new Rect(row.FaceplateLeft, row.Top, TechScreens.FaceplateWidth, TechScreens.FaceplateHeight);
                 context.DrawRectangle(Faceplate, FaceplateBorder, faceplate, 4, 4);
             }
         }
+    }
+
+    private static SolidColorBrush Brush(string hex)
+    {
+        var (r, g, b) = TechScreenColors.Parse(hex);
+        return new SolidColorBrush(Color.FromRgb(r, g, b));
     }
 
     private static void DrawText(DrawingContext context, string text, double size, IBrush brush, Rect area, bool center)

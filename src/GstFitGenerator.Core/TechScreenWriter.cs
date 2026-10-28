@@ -9,13 +9,6 @@ namespace GstFitGenerator.Core;
 
 public static class TechScreenWriter
 {
-    // Estilo de los recuadros: claro y sin colores fuertes, para que destaque el estado de los faceplates.
-    private const string BoxBack = "238, 241, 245";
-    private const string BoxBorder = "176, 186, 200";
-    private const string TitleBack = "214, 222, 232";
-    private const string TitleFore = "35, 45, 60";
-    private const string LabelFore = "49, 52, 74";
-
     private static readonly Lazy<string> Template = new(() => Resource("TechScreen.template.xml"));
     // Con los espacios tal cual: dentro de <Text><body><p> un salto de línea de más se vería en el HMI.
     private static readonly Lazy<XElement> Parts = new(() => XElement.Parse(Resource("TechScreen.parts.xml"), LoadOptions.PreserveWhitespace));
@@ -45,16 +38,17 @@ public static class TechScreenWriter
             items.AddFirst(NavButton(project, next, "btnNextScreen", 1342, "CC_ArrowRightDoppel_24x24"));
         }
 
+        var s = page.Style;
         int box = 0, row = 0, tab = 10;
         foreach (var b in page.Boxes)
         {
             box++;
-            items.Add(Rectangle(b, box));
-            items.Add(Text($"txtBox_{box}", b.Title, b.Left, b.Top, b.Width, TechScreens.TitleHeight, 15, title: true));
+            items.Add(Rectangle(b, box, s));
+            items.Add(Text($"txtBox_{box}", b.Title, b.Left, b.Top, b.Width, s.TitleHeight, s, title: true));
             foreach (var r in b.Rows)
             {
                 row++;
-                items.Add(Text($"txtTech_{row}", r.Text, r.Left, r.Top + (TechScreens.FaceplateHeight - TechScreens.LabelHeight) / 2, r.LabelWidth, TechScreens.LabelHeight, 14, title: false));
+                items.Add(Text($"txtTech_{row}", r.Text, r.Left, r.Top + (TechScreens.FaceplateHeight - s.LabelHeight) / 2, r.LabelWidth, s.LabelHeight, s, title: false));
                 items.Add(Faceplate(r, row, tab++));
             }
         }
@@ -80,25 +74,26 @@ public static class TechScreenWriter
         return button;
     }
 
-    private static XElement Rectangle(TechScreenBox box, int number)
+    private static XElement Rectangle(TechScreenBox box, int number, TechScreenStyle s)
     {
         var rect = Part("Hmi.Screen.Rectangle");
         Set(rect, "ObjectName", $"rectBox_{number}");
-        Set(rect, "BackColor", BoxBack);
-        Set(rect, "BorderColor", BoxBorder);
+        Set(rect, "BackColor", Rgb(s.BoxBack));
+        Set(rect, "BorderColor", Rgb(s.BoxBorder));
         Set(rect, "BorderWidth", "1");
         Place(rect, box.Left, box.Top, box.Width, box.Height);
         return rect;
     }
 
-    private static XElement Text(string name, string text, int left, int top, int width, int height, int fontSize, bool title)
+    private static XElement Text(string name, string text, int left, int top, int width, int height, TechScreenStyle s, bool title)
     {
+        var fontSize = title ? s.TitleFontSize : s.LabelFontSize;
         var field = Part("Hmi.Screen.TextField");
         Set(field, "ObjectName", name);
         Set(field, "FitToLargest", "false");
         Set(field, "BackFillStyle", title ? "Solid" : "Transparent");
-        Set(field, "BackColor", title ? TitleBack : "255, 255, 255");
-        Set(field, "ForeColor", title ? TitleFore : LabelFore);
+        Set(field, "BackColor", title ? Rgb(s.TitleBack) : "255, 255, 255");
+        Set(field, "ForeColor", Rgb(title ? s.TitleFore : s.LabelFore));
         Set(field, "HorizontalAlignment", title ? "Center" : "Left");
         Set(field, "VerticalAlignment", "Middle");
         Place(field, left, top, width, height);
@@ -136,6 +131,13 @@ public static class TechScreenWriter
             }
         }
         return faceplate;
+    }
+
+    // #RRGGBB -> "r, g, b", como escribe TIA los colores. Un color mal escrito sale negro.
+    private static string Rgb(string hex)
+    {
+        var (r, g, b) = TechScreenColors.Parse(hex);
+        return string.Create(CultureInfo.InvariantCulture, $"{r}, {g}, {b}");
     }
 
     // Variables internas del HMI con un valor fijo: Int_Value_022 vale 22.
