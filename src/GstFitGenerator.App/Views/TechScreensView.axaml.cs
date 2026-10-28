@@ -11,5 +11,6 @@ public partial class TechScreensView : UserControl
         // La vista previa avisa de clics y arrastres; el modelo de vista hace el retoque.
         Preview.BoxClicked += box => (DataContext as TechScreensViewModel)?.OnBoxClicked(box);
         Preview.BoxDragged += (box, left, top) => (DataContext as TechScreensViewModel)?.OnBoxDragged(box, left, top);
+        Preview.BoxResized += (box, percent) => (DataContext as TechScreensViewModel)?.OnBoxResized(box, percent);
     }
 }

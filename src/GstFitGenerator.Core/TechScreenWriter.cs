@@ -38,10 +38,11 @@ public static class TechScreenWriter
             items.AddFirst(NavButton(project, next, "btnNextScreen", 1342, "CC_ArrowRightDoppel_24x24"));
         }
 
-        var s = page.Style;
         int box = 0, row = 0, tab = 10;
         foreach (var b in page.Boxes)
         {
+            // El estilo del recuadro: el de la pantalla, escalado si se le ha cambiado el tamaño.
+            var s = b.Style;
             box++;
             items.Add(Rectangle(b, box, s));
             items.Add(Text($"txtBox_{box}", b.Title, b.Left, b.Top, b.Width, s.TitleHeight, s, title: true));

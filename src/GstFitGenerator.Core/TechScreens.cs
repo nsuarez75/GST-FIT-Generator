@@ -22,6 +22,9 @@ public sealed record TechScreenBox(string Title, int Left, int Top, int Width, i
     public IReadOnlyList<string> Assets { get; init; } = [];
     public int RowsPerColumn { get; init; }
     public bool IsManual { get; init; }
+    // Tamaño en % y el estilo con sus letras, faceplates y filas ya escalados: con él se dibuja.
+    public int Scale { get; init; } = 100;
+    public TechScreenStyle Style { get; init; } = new();
 
     public int Right => Left + Width;
     public int Bottom => Top + Height;
@@ -94,6 +97,37 @@ public static class TechScreens
         };
         s.RowHeight = Math.Clamp(style.RowHeight, s.FaceplateHeight + 1, Math.Max(TechScreenStyle.MaxRowHeight, s.FaceplateHeight + 1));
         return s;
+    }
+
+    public const int MinScale = 40;
+    public const int MaxScale = 200;
+
+    // Estilo de un recuadro escalado: letras, faceplate y alto de fila en proporción; colores y lienzo, los mismos.
+    public static TechScreenStyle Scaled(TechScreenStyle s, int percent)
+    {
+        if (percent == 100)
+        {
+            return s;
+        }
+        int Of(int value) => (int)Math.Round(value * percent / 100.0);
+        var scaled = new TechScreenStyle
+        {
+            BoxBack = s.BoxBack,
+            BoxBorder = s.BoxBorder,
+            TitleBack = s.TitleBack,
+            TitleFore = s.TitleFore,
+            LabelFore = s.LabelFore,
+            BoxGap = s.BoxGap,
+            MarginLeft = s.MarginLeft,
+            MarginTop = s.MarginTop,
+            MarginRight = s.MarginRight,
+            MarginBottom = s.MarginBottom,
+            TitleFontSize = Math.Max(6, Of(s.TitleFontSize)),
+            LabelFontSize = Math.Max(6, Of(s.LabelFontSize)),
+            FaceplateWidth = Math.Max(10, Of(s.FaceplateWidth)),
+        };
+        scaled.RowHeight = Math.Max(scaled.FaceplateHeight + 1, Of(s.RowHeight));
+        return scaled;
     }
 
     public static TechScreenPlan Plan(Project project)
@@ -363,12 +397,12 @@ public static class TechScreens
         foreach (var box in boxes.Where(b => b.Placement is { Screen: not null, Left: not null, Top: not null }))
         {
             var p = box.Placement!;
-            PageAt(p.Screen!.Value).Add(Place(box, Columns(box, Rows(box, s)), p.Left!.Value, p.Top!.Value, s, manual: true));
+            PageAt(p.Screen!.Value).Add(Place(box, Columns(box, Rows(box, s)), p.Left!.Value, p.Top!.Value, StyleOf(box, s), manual: true));
         }
         foreach (var box in boxes.Where(b => b.Placement is { Screen: not null } && (b.Placement.Left is null || b.Placement.Top is null)))
         {
             var page = PageAt(box.Placement!.Screen!.Value);
-            page.Add(TryPlace(box, page, s) ?? Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, s, manual: true));
+            page.Add(TryPlace(box, page, s) ?? Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, StyleOf(box, s), manual: true));
         }
         var cursor = 0;
         foreach (var box in boxes.Where(b => b.Placement?.Screen is null))
@@ -384,7 +418,7 @@ public static class TechScreens
                 if (page.Count == 0)
                 {
                     // En una pantalla vacía siempre se coloca, aunque se salga (un recuadro enorme): mejor verlo que perderlo.
-                    page.Add(Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, s, manual: false));
+                    page.Add(Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, StyleOf(box, s), manual: false));
                     break;
                 }
                 cursor++;
@@ -414,23 +448,28 @@ public static class TechScreens
 
     private static Rect Of(TechScreenBox b) => new(b.Left, b.Top, b.Width, b.Height);
 
+    // Estilo del recuadro: el de la pantalla, escalado si el retoque le da otro tamaño.
+    private static TechScreenStyle StyleOf(Box box, TechScreenStyle s) =>
+        box.Placement?.Scale is int scale ? Scaled(s, Math.Clamp(scale, MinScale, MaxScale)) : s;
+
     // Filas por columna del recuadro: las del retoque o las que quepan.
-    private static int Rows(Box box, TechScreenStyle s) => box.Placement?.RowsPerColumn is int r and > 0 ? r : RowsPerColumn(s);
+    private static int Rows(Box box, TechScreenStyle s) => box.Placement?.RowsPerColumn is int r and > 0 ? r : RowsPerColumn(StyleOf(box, s));
 
     private static TechScreenBox? TryPlace(Box box, List<TechScreenBox> page, TechScreenStyle s)
     {
+        var bs = StyleOf(box, s);
         var taken = page.Select(Of).ToList();
         var maxRows = box.Groups.Max(g => g.Items.Count);
         var fixedRows = box.Placement?.RowsPerColumn is int r and > 0 ? r : (int?)null;
-        var from = fixedRows ?? Math.Min(RowsPerColumn(s), maxRows);
+        var from = fixedRows ?? Math.Min(RowsPerColumn(bs), maxRows);
         var to = fixedRows ?? Math.Min(MinRowsPerColumn, maxRows);
         for (var rows = from; rows >= to; rows--)
         {
             var columns = Columns(box, rows);
-            var (w, h) = (Width(columns, s), Height(columns, s));
+            var (w, h) = (Width(columns, bs), Height(columns, bs));
             if (FindSpot(taken, w, h, s) is { } spot)
             {
-                return Place(box, columns, spot.Left, spot.Top, s, manual: box.Placement is not null);
+                return Place(box, columns, spot.Left, spot.Top, bs, manual: box.Placement is not null);
             }
         }
         return null;
@@ -486,6 +525,8 @@ public static class TechScreens
             Assets = box.Groups.Select(g => g.Asset).ToList(),
             RowsPerColumn = columns.Max(c => c.Count),
             IsManual = manual,
+            Scale = box.Placement?.Scale is int scale ? Math.Clamp(scale, MinScale, MaxScale) : 100,
+            Style = s,
         };
     }
 }
@@ -566,6 +607,19 @@ public static class TechScreenEdits
             edit.SplitBefore.Add(asset);
         }
         edit.Parts.RemoveAll(p => p.Part > box.Part);
+    }
+
+    // Tamaño del recuadro en % (40 a 200). Se queda en su pantalla, en su sitio y con sus columnas: solo cambia
+    // de tamaño.
+    public static void Resize(Project project, TechScreenPage page, TechScreenBox box, int percent)
+    {
+        var p = PartOf(EditOf(project, page, box), box.Part);
+        var scale = Math.Clamp(percent, TechScreens.MinScale, TechScreens.MaxScale);
+        p.Scale = scale == 100 ? null : scale;
+        p.Screen ??= page.Index;
+        p.Left ??= box.Left;
+        p.Top ??= box.Top;
+        p.RowsPerColumn ??= box.RowsPerColumn;
     }
 
     // Quita todos los retoques del recuadro (todas sus partes): vuelve a colocarse solo.

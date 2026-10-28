@@ -704,6 +704,28 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Pantallas_de_techs_cambiar_el_tamano_de_un_recuadro()
+    {
+        var (window, main, _) = await Open();
+        main.SelectedNode = main.FindNode(NavKind.TechScreens);
+        var screens = Assert.IsType<TechScreensViewModel>(main.Editor);
+        screens.Starts[0].SelectedIndex = 7;
+        Dispatcher.UIThread.RunJobs();
+        var box = screens.SelectedPage!.Page.Boxes.Single(b => b.Title == "1000FIX01");
+
+        screens.OnBoxClicked(box);
+        screens.OnBoxResized(box, 150);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(150m, screens.BoxScale);
+        Assert.True(screens.SelectedBox!.Width > box.Width * 1.4);
+        Shot(window, "15-tamano-recuadro");
+
+        screens.BoxScale = 100;
+        Assert.Equal(box.Width, screens.SelectedBox!.Width);
+    }
+
+    [AvaloniaFact]
     public async Task La_ficha_sale_cerrada_al_abrir_una_referencia()
     {
         var (_, main, _) = await Open();
