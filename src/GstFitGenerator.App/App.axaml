@@ -26,6 +26,7 @@
                 <ColorPaletteResources x:Key="Dark" Accent="#3B82F6" RegionColor="#16181D" ErrorText="#F87171" />
             </FluentTheme.Palettes>
         </FluentTheme>
+        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
         <StyleInclude Source="avares://GstFitGenerator/Views/Theme.axaml" />
     </Application.Styles>
 </Application>

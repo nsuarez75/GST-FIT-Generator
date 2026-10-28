@@ -636,6 +636,30 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Pantallas_de_techs_estilo_y_restaurar()
+    {
+        var (window, main, _) = await Open();
+        main.SelectedNode = main.FindNode(NavKind.TechScreens);
+        var screens = Assert.IsType<TechScreensViewModel>(main.Editor);
+        screens.Starts[0].SelectedIndex = 7;
+
+        screens.Colors[0].Color = Avalonia.Media.Color.FromRgb(255, 240, 200);
+        screens.RowHeight = 60;
+
+        Assert.Equal("#FFF0C8", main.Session.Project.TechScreens.Style.BoxBack);
+        var rows = screens.SelectedPage!.Page.Boxes[0].Rows;
+        Assert.Equal(60, rows[1].Top - rows[0].Top);
+        Shot(window, "13-estilo-pantallas");
+
+        screens.ResetStyleCommand.Execute(null);
+        Assert.Equal(new TechScreenStyle().BoxBack, main.Session.Project.TechScreens.Style.BoxBack);
+        Assert.Equal(40, screens.RowHeight);
+
+        main.UndoCommand.Execute(null);
+        Assert.Equal(60, main.Session.Project.TechScreens.Style.RowHeight);
+    }
+
+    [AvaloniaFact]
     public async Task Tecnologia_de_un_tipo_y_nombre_de_la_tecnologia()
     {
         var (_, main, _) = await Open();

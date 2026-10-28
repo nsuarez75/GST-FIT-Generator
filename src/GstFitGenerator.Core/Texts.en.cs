@@ -237,5 +237,16 @@ public static partial class L
         ["Ref{0}: {1} features sin fixture van al recuadro «{2}»."] = "Ref{0}: {1} features without a fixture go to the box “{2}”.",
         ["{0}: empieza en la pantalla {1} en vez de en la {2}, porque la {2} ya está ocupada."] = "{0}: starts at screen {1} instead of {2}, because {2} is already taken.",
         ["{0}: hacen falta pantallas hasta la {1} y solo hay {2}."] = "{0}: screens up to {1} are needed and there are only {2}.",
+        ["ESTILO"] = "STYLE",
+        ["Restaurar estilo por defecto"] = "Restore default style",
+        ["Fondo del recuadro"] = "Box background",
+        ["Borde del recuadro"] = "Box border",
+        ["Franja del título"] = "Title band",
+        ["Texto del título"] = "Title text",
+        ["Texto de las filas"] = "Row text",
+        ["Letra del título"] = "Title font size",
+        ["Letra de las filas"] = "Row font size",
+        ["Alto de fila"] = "Row height",
+        ["Separación entre recuadros"] = "Gap between boxes",
     };
 }

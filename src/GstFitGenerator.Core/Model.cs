@@ -146,6 +146,48 @@ public sealed class TechScreenSettings
     public Dictionary<string, string> ShortNames { get; set; } = [];
 
     public string ShortName(string name) => ShortNames.TryGetValue(name, out var s) && s.Length > 0 ? s : name;
+
+    public TechScreenStyle Style { get; set; } = new();
+}
+
+// Aspecto de las pantallas de techs. Colores en #RRGGBB; tamaños en píxeles de la pantalla del HMI.
+public sealed class TechScreenStyle
+{
+    public const int MinFontSize = 8;
+    public const int MaxFontSize = 30;
+    public const int MaxRowHeight = 80;
+    public const int MaxBoxGap = 60;
+
+    public string BoxBack { get; set; } = "#EEF1F5";
+    public string BoxBorder { get; set; } = "#B0BAC8";
+    public string TitleBack { get; set; } = "#D6DEE8";
+    public string TitleFore { get; set; } = "#232D3C";
+    public string LabelFore { get; set; } = "#31344A";
+    public int TitleFontSize { get; set; } = 15;
+    public int LabelFontSize { get; set; } = 14;
+    // Distancia entre filas; como mínimo el alto del faceplate más 1.
+    public int RowHeight { get; set; } = 40;
+    public int BoxGap { get; set; } = 12;
+
+    // Alto de la franja del título y de los textos de fila, según su letra.
+    public int TitleHeight => TitleFontSize + 13;
+    public int LabelHeight => LabelFontSize + 11;
+    // Ancho aproximado de un carácter del texto de fila (Tahoma negrita).
+    public int CharWidth => (int)Math.Ceiling(LabelFontSize * 0.64);
+}
+
+public static class TechScreenColors
+{
+    // #RRGGBB (o RRGGBB) -> componentes. Lo que no se entiende es negro.
+    public static (byte R, byte G, byte B) Parse(string hex)
+    {
+        var h = hex.Trim().TrimStart('#');
+        return h.Length == 6 && int.TryParse(h, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? ((byte)(v >> 16), (byte)(v >> 8), (byte)v)
+            : ((byte)0, (byte)0, (byte)0);
+    }
+
+    public static string Format(byte r, byte g, byte b) => $"#{r:X2}{g:X2}{b:X2}";
 }
 
 public sealed class VersionEntry

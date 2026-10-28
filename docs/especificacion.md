@@ -97,7 +97,7 @@ Acordado en la entrevista del 2026-10-28.
 - Reservas: solo salen si tienen pantalla de inicio; todas las referencias la comparten, con un recuadro por referencia y tecnología y el texto «Tecnología - Pointer».
 - Al generar, la descripción vacía de Screen Names de cada pantalla usada se rellena con «RefN Techs» o «Reservas».
 - La parte fija de cada pantalla es la del estándar SICAR@GST: plantilla `CC_0000_ScreenTemplate`, eventos `ClearScreen` y `GenerateScreen` (menú), botones Leyenda, Enclavamiento e I4.0, `ScreenLocking`, cabecera y subtítulo con la lista `CO_Traceability_ID` y `Int_Value_<NN>`. Los botones de pantalla anterior y siguiente solo enlazan pantallas de la misma referencia (o de reservas).
-- Estilo sobrio: recuadros claros con borde fino y el título en una franja; lo que destaca es el estado de los faceplates.
+- Estilo de cada proyecto, en el bloque «Estilo»: colores (fondo y borde del recuadro, franja y texto del título, texto de las filas) con selector de color, letra del título y de las filas (8 a 30), alto de fila (más que el faceplate, hasta 80) y separación entre recuadros (0 a 60). «Restaurar estilo por defecto» vuelve al de serie: sobrio, con recuadros claros y el título en una franja, para que destaque el estado de los faceplates. La vista previa cambia al momento.
 - Pendiente: no se comprueba que existan en el HMI las variables `Tech_Status_NNN` e `Int_Value_NNN` que se usan.
 
 
