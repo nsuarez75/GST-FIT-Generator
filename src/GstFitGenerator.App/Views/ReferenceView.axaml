@@ -63,10 +63,12 @@
                    Text="{l:T 'Todavía no hay features. Pulsa Añadir, pega filas de un Excel o importa una plantilla.'}" />
 
         <Grid ColumnDefinitions="*,Auto">
-            <!-- Con la ficha abierta la tabla no cabe entera: ancho mínimo y desplazamiento horizontal -->
+            <!-- Con la ficha abierta la tabla no cabe entera: ancho mínimo y desplazamiento horizontal. El ancho de la
+                 tabla lo fija el código (el visible, como mínimo MinWidth): sin él cada fila mediría sus columnas según
+                 su texto y un tipo largo las descuadraría. -->
             <Border Classes="card" Padding="0">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <DockPanel MinWidth="1080">
+                <ScrollViewer x:Name="TableScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <DockPanel x:Name="Table" MinWidth="1080">
                     <Border DockPanel.Dock="Top" Classes="tablehead">
                         <Grid ColumnDefinitions="22,74,36,1*,1.8*,140,86,44,1.4*" ColumnSpacing="8">
                             <TextBlock Grid.Column="1" Classes="columnHeader" Text="OFFSET" />
@@ -112,7 +114,8 @@
                                     <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Offset}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="2" Classes="mono label" Text="{Binding Pointer}" VerticalAlignment="Center" />
                                     <TextBox Grid.Column="3" Classes="cell mono" Text="{Binding ClientReference, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReserve}" />
-                                    <ComboBox Grid.Column="4" ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding Type}" HorizontalAlignment="Stretch">
+                                    <ComboBox Grid.Column="4" ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding Type}" HorizontalAlignment="Stretch"
+                                              ToolTip.Tip="{Binding Type.Text, FallbackValue={x:Null}}">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate x:DataType="vm:TypeOption">
                                                 <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />

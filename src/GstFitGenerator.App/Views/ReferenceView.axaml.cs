@@ -25,6 +25,8 @@ public partial class ReferenceView : UserControl
         InitializeComponent();
         _autoScroll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
         _autoScroll.Tick += (_, _) => AutoScroll();
+        // La tabla ocupa el ancho visible (y como mínimo su MinWidth, con desplazamiento horizontal si no cabe).
+        TableScroll.SizeChanged += (_, e) => Table.Width = Math.Max(Table.MinWidth, e.NewSize.Width);
         Rows.TemplateApplied += (_, e) =>
         {
             if (e.NameScope.Find<ScrollViewer>("PART_ScrollViewer") is { } scroll)
