@@ -11,8 +11,9 @@ public sealed class GenerationOptions
     public bool TableInfoDb { get; set; } = true;
     public bool ConfigReferenceFb { get; set; } = true;
     public bool CheckTechDb { get; set; } = true;
+    public bool TechScreens { get; set; } = true;
 
-    public bool Any => Template || FitExcel || TableInfoDb || ConfigReferenceFb || CheckTechDb;
+    public bool Any => Template || FitExcel || TableInfoDb || ConfigReferenceFb || CheckTechDb || TechScreens;
 }
 
 public static class Generation
@@ -23,6 +24,7 @@ public static class Generation
     public const string TableInfoFolder = "TableInfo_DB";
     public const string ConfigReferenceFolder = "Config_Reference_FB";
     public const string CheckTechFolder = "CheckTech_DB";
+    public const string TechScreensFolder = "Pantallas";
 
     // Rutas de los archivos que se escribirán, para avisar antes de sobrescribir.
     public static List<string> Planned(Project project, GenerationOptions options, string folder, DateOnly date)
@@ -50,6 +52,10 @@ public static class Generation
             files.AddRange(PlcWriters.CheckTechFixtures(project).Where(f => f.Uses.Count > 0)
                 .Select(f => Path.Combine(CheckTechFolder, f.FileName)));
         }
+        if (options.TechScreens)
+        {
+            files.AddRange(Core.TechScreens.Plan(project).Pages.Select(p => Path.Combine(TechScreensFolder, TechScreenWriter.FileName(project, p))));
+        }
         return files.Select(f => Path.Combine(folder, f)).ToList();
     }
 
@@ -71,6 +77,17 @@ public static class Generation
             var path = PathIn(subfolder, name);
             File.WriteAllText(path, content, encoding);
             written.Add(path);
+        }
+
+        // Las pantallas de techs rellenan las descripciones vacías de Screen Names, que también van en la plantilla.
+        var plan = options.TechScreens ? Core.TechScreens.Plan(project) : null;
+        if (plan is not null)
+        {
+            if (plan.Errors.Count > 0)
+            {
+                throw new InvalidDataException(string.Join(Environment.NewLine, plan.Errors));
+            }
+            Core.TechScreens.FillDescriptions(project, plan);
         }
 
         if (options.Template)
@@ -103,6 +120,13 @@ public static class Generation
             foreach (var fixture in fixtures.Where(f => f.Uses.Count > 0))
             {
                 Write(CheckTechFolder, fixture.FileName, PlcWriters.CheckTechInit(fixture));
+            }
+        }
+        if (plan is not null)
+        {
+            foreach (var page in plan.Pages)
+            {
+                Write(TechScreensFolder, TechScreenWriter.FileName(project, page), TechScreenWriter.Write(project, plan, page));
             }
         }
 

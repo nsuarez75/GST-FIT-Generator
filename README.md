@@ -8,10 +8,10 @@ Aplicación de escritorio para crear dentro de la propia app los datos del FIT d
 
 1. **Proyecto**: nombre, revisión, planta y línea. O bien **Importar plantilla** para crearlo a partir de una plantilla Excel de las de antes.
 2. **Catálogo** (común a todos los proyectos): los tipos de feature. En **Tecnologías**, el nombre de cada tecnología (0 a 10) y la tecnología de cada tipo.
-3. **Locations**, **Auxiliares**, **Screen Names** y **Control de versiones**.
+3. **Locations**, **Auxiliares**, **Screen Names** y **Control de versiones**. En **Pantallas de techs**, dónde empieza cada referencia en las pantallas de trazabilidad del HMI, los nombres cortos de Fixtures y Assets y una vista previa de cada pantalla.
 4. **Referencias**: una tabla por referencia, agrupada por tecnología, con el pointer y el offset de cada feature. Se reordena arrastrando por el asa (o con Alt+↑/↓) dentro de su tecnología. «Eliminar» propone convertir la feature en reserva para no mover nada. Se pueden pegar filas de un Excel y duplicar la referencia.
 5. **Tamaños**: las constantes `TechNN_Ref_MM` para TIA, listas para copiar.
-6. **Generar** (F5): plantilla, FIT, `User_TableInfo_DB`, `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus SCL. Antes de escribir enseña qué features han cambiado de posición desde la última generación.
+6. **Generar** (F5): plantilla, FIT, `User_TableInfo_DB`, `User_Config_Reference_FB`, `CheckTechTemplate_DB` con sus SCL y las pantallas de techs en XML para importar en TIA, cada cosa en su subcarpeta. Antes de escribir enseña qué features han cambiado de posición desde la última generación.
 
 El proyecto se guarda en un archivo `.fitproj` (Guardar como sirve para exportarlo) y el catálogo en `%APPDATA%\GST-FIT-Generator\catalogo.fitcat`. La interfaz está en castellano e inglés y tiene tema claro y oscuro.
 

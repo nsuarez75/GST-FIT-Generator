@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GstFitGenerator.App.ViewModels"
+             xmlns:c="using:GstFitGenerator.App.Controls"
+             xmlns:l="using:GstFitGenerator.App"
+             x:Class="GstFitGenerator.App.Views.TechScreensView"
+             x:DataType="vm:TechScreensViewModel">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24,20" Spacing="14">
+            <TextBlock Classes="h1" Text="{l:T 'Pantallas de techs'}" />
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                       Text="{l:T 'Pantallas de trazabilidad del HMI con un faceplate TechLayout por feature: un recuadro por Fixture y una columna por Asset. Cada referencia ocupa pantallas desde su pantalla de inicio; si no cabe, la siguiente se corre. Las reservas solo salen si tienen pantalla de inicio.'}" />
+
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Classes="card" Padding="0" VerticalAlignment="Top" MinWidth="320">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Classes="tablehead">
+                            <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                                <TextBlock Classes="columnHeader" Text="{l:T 'CONTENIDO'}" />
+                                <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'EMPIEZA EN'}" />
+                            </Grid>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Starts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:TechStartRowViewModel">
+                                    <Border BorderBrush="{DynamicResource App.Border}" BorderThickness="0,1,0,0" Padding="14,6">
+                                        <Grid ColumnDefinitions="*,110" ColumnSpacing="10">
+                                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                            <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedIndex="{Binding SelectedIndex}" HorizontalAlignment="Stretch" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="1" Classes="card" Padding="0" VerticalAlignment="Top" MaxHeight="320">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Classes="tablehead">
+                            <Grid ColumnDefinitions="80,*,*" ColumnSpacing="10">
+                                <TextBlock Classes="columnHeader" Text="{l:T 'TIPO'}" />
+                                <TextBlock Grid.Column="1" Classes="columnHeader" Text="{l:T 'NOMBRE'}" />
+                                <TextBlock Grid.Column="2" Classes="columnHeader" Text="{l:T 'NOMBRE CORTO'}" />
+                            </Grid>
+                        </Border>
+                        <ListBox Classes="table" ItemsSource="{Binding ShortNames}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ShortNameRowViewModel">
+                                    <Grid ColumnDefinitions="80,*,*" ColumnSpacing="10">
+                                        <TextBlock Classes="label" Text="{Binding Kind}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <TextBox Grid.Column="2" Classes="cell mono" Text="{Binding ShortName, UpdateSourceTrigger=LostFocus}" PlaceholderText="{Binding Name}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <Border Classes="card" IsVisible="{Binding HasErrors}">
+                <ItemsControl ItemsSource="{Binding Errors}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,3">
+                                <c:Icon Kind="alert" Width="14" Height="14" Foreground="{DynamicResource App.Bad}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding}" FontSize="12" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+            <Border Classes="card" IsVisible="{Binding HasWarnings}">
+                <ItemsControl ItemsSource="{Binding Warnings}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,3">
+                                <c:Icon Kind="alert" Width="14" Height="14" Foreground="{DynamicResource App.Warn}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <TextBlock Classes="muted" FontSize="12" IsVisible="{Binding !HasPages}"
+                       Text="{l:T 'Elige la pantalla de inicio de alguna referencia para ver la vista previa.'}" />
+            <StackPanel Spacing="8" IsVisible="{Binding HasPages}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    <TextBlock Classes="label" Text="{l:T 'Vista previa'}" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}" MinWidth="420">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TechPageOption">
+                                <TextBlock Classes="mono" Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+                <Border BorderBrush="{DynamicResource App.Border}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+                    <Viewbox Stretch="Uniform">
+                        <c:TechScreenPreview Page="{Binding SelectedPage.Page, FallbackValue={x:Null}}" Title="{Binding SelectedPage.Text, FallbackValue=''}" />
+                    </Viewbox>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

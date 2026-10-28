@@ -19,6 +19,8 @@ public sealed class Project
     // Parte común de los nombres de pantalla: CO_0000_000 -> CO_0000_000_Traceability_01…24.
     public string ScreenPrefix { get; set; } = "";
     public List<Screen> Screens { get; set; } = Screen.Defaults();
+    // Pantallas de techs del HMI: dónde empieza cada referencia, las reservas y los nombres cortos.
+    public TechScreenSettings TechScreens { get; set; } = new();
     public List<VersionEntry> Versions { get; set; } = [];
     // Carpeta donde se escribe lo generado; se recuerda por proyecto.
     public string? OutputFolder { get; set; }
@@ -132,6 +134,18 @@ public sealed class Screen
         }
         return (prefix[..start], int.Parse(prefix[start..], System.Globalization.CultureInfo.InvariantCulture), digits);
     }
+}
+
+public sealed class TechScreenSettings
+{
+    // Pantalla de inicio (1…24) de cada referencia, por número de referencia. La que no está no sale en pantallas.
+    public Dictionary<int, int> ReferenceStarts { get; set; } = [];
+    // Pantalla de inicio de las reservas de todas las referencias. Null: las reservas no salen en pantallas.
+    public int? ReservesStart { get; set; }
+    // Nombre corto de cada Asset o Fixture (1000R1 -> R10.1) para los textos de las pantallas.
+    public Dictionary<string, string> ShortNames { get; set; } = [];
+
+    public string ShortName(string name) => ShortNames.TryGetValue(name, out var s) && s.Length > 0 ? s : name;
 }
 
 public sealed class VersionEntry

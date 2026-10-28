@@ -106,7 +106,7 @@ public sealed class MainWindowTests : IDisposable
         var (window, main, _) = await Open(width);
         var suffix = $"{theme}-{language}-{width}";
 
-        foreach (var kind in new[] { NavKind.Project, NavKind.Technologies, NavKind.Locations, NavKind.Reference, NavKind.Auxiliaries, NavKind.Screens, NavKind.Versions, NavKind.Sizes })
+        foreach (var kind in new[] { NavKind.Project, NavKind.Technologies, NavKind.Locations, NavKind.Reference, NavKind.Auxiliaries, NavKind.Screens, NavKind.TechScreens, NavKind.Versions, NavKind.Sizes })
         {
             main.SelectedNode = main.FindNode(kind, kind == NavKind.Reference ? 1 : 0);
             Dispatcher.UIThread.RunJobs();
@@ -114,6 +114,10 @@ public sealed class MainWindowTests : IDisposable
             if (main.Editor is ReferenceViewModel reference)
             {
                 reference.Selected = Row(reference, "W1");
+            }
+            if (main.Editor is TechScreensViewModel techScreens)
+            {
+                techScreens.Starts[0].SelectedIndex = 7;
             }
             Shot(window, $"{(int)kind:00}-{kind}-{suffix}");
         }
@@ -607,6 +611,28 @@ public sealed class MainWindowTests : IDisposable
         var editor = Assert.IsType<ReferenceViewModel>(main.Editor);
         Assert.Equal(2, editor.Reference.Number);
         Assert.Equal("W3", editor.Selected!.Feature.ClientReference);
+    }
+
+    [AvaloniaFact]
+    public async Task Pantallas_de_techs_reparto_nombres_cortos_y_deshacer()
+    {
+        var (_, main, _) = await Open();
+        main.SelectedNode = main.FindNode(NavKind.TechScreens);
+        var screens = Assert.IsType<TechScreensViewModel>(main.Editor);
+        Assert.False(screens.HasPages);
+
+        screens.Starts[0].SelectedIndex = 7;
+        screens.Starts[1].SelectedIndex = 7;
+        screens.ShortNames.First(s => s.Name == "1000R1").ShortName = "R10.1";
+
+        Assert.Equal([7, 8], screens.Pages.Select(p => p.Page.Number));
+        Assert.Single(screens.Warnings);
+        // Lo elegido no cambia: solo se corre en el reparto, con su aviso.
+        Assert.Equal(7, main.Session.Project.TechScreens.ReferenceStarts[2]);
+        Assert.Contains(screens.SelectedPage!.Page.Boxes[0].Rows, r => r.Text == "R10.1 - W1");
+
+        main.UndoCommand.Execute(null);
+        Assert.False(main.Session.Project.TechScreens.ShortNames.ContainsKey("1000R1"));
     }
 
     [AvaloniaFact]

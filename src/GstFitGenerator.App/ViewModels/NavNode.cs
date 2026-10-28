@@ -12,6 +12,7 @@ public enum NavKind
     Reference,
     Auxiliaries,
     Screens,
+    TechScreens,
     Versions,
     Sizes,
 }
@@ -42,6 +43,7 @@ public sealed partial class NavNode(NavKind kind, int reference = 0) : Observabl
         NavKind.Reference => "list",
         NavKind.Auxiliaries => "users",
         NavKind.Screens => "monitor",
+        NavKind.TechScreens => "layout-grid",
         NavKind.Versions => "history",
         _ => "ruler",
     };
