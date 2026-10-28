@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Collections;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GstFitGenerator.Core;
@@ -15,7 +16,7 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     public Reference Reference { get; }
     // Cabeceras de bloque (BlockHeaderViewModel) y filas (FeatureRowViewModel), en orden.
-    public ObservableCollection<object> Items { get; } = [];
+    public AvaloniaList<object> Items { get; } = [];
     public IReadOnlyList<TypeOption> TypeOptions { get; }
     public IReadOnlyList<LocationOption> LocationOptions { get; }
 
@@ -115,16 +116,31 @@ public sealed partial class ReferenceViewModel : EditableViewModel
         OnPropertyChanged(nameof(AllCollapsed));
     }
 
-    // Deja Items igual que la lista nueva quitando, moviendo e insertando lo justo.
+    // Deja Items igual que la lista nueva quitando, moviendo e insertando lo justo. Las filas seguidas se quitan e
+    // insertan de una vez (un solo aviso a la lista): expandir o contraer una tecnología con cientos de features
+    // no redibuja la lista fila a fila.
     private void Sync(List<object> items)
     {
         var keep = new HashSet<object>(items, ReferenceEqualityComparer.Instance);
-        for (var i = Items.Count - 1; i >= 0; i--)
+        for (var end = Items.Count - 1; end >= 0; end--)
         {
-            if (!keep.Contains(Items[i]))
+            if (keep.Contains(Items[end]))
             {
-                Items.RemoveAt(i);
+                continue;
             }
+            var start = end;
+            while (start > 0 && !keep.Contains(Items[start - 1]))
+            {
+                start--;
+            }
+            Items.RemoveRange(start, end - start + 1);
+            end = start;
+        }
+        var present = new HashSet<object>(Items, ReferenceEqualityComparer.Instance);
+        var position = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < items.Count; i++)
+        {
+            position[items[i]] = i;
         }
         for (var i = 0; i < items.Count; i++)
         {
@@ -132,24 +148,42 @@ public sealed partial class ReferenceViewModel : EditableViewModel
             {
                 continue;
             }
-            var from = -1;
-            for (var j = i + 1; j < Items.Count; j++)
+            if (present.Contains(items[i]))
             {
-                if (ReferenceEquals(Items[j], items[i]))
+                var from = IndexOf(items[i], i + 1);
+                if (from == i + 1)
                 {
-                    from = j;
-                    break;
+                    // Lo que hay aquí ha bajado (se arrastró hacia abajo): se lleva de una vez delante de la fila que
+                    // la sigue en la lista nueva, en vez de subir una a una todas las de en medio.
+                    var next = position[Items[i]] + 1;
+                    while (next < items.Count && !present.Contains(items[next]))
+                    {
+                        next++;
+                    }
+                    Items.Move(i, next < items.Count ? IndexOf(items[next], i + 1) - 1 : Items.Count - 1);
+                    i--;
+                    continue;
                 }
-            }
-            if (from >= 0)
-            {
                 Items.Move(from, i);
+                continue;
             }
-            else
+            var count = 1;
+            while (i + count < items.Count && !present.Contains(items[i + count]))
             {
-                Items.Insert(i, items[i]);
+                count++;
             }
+            Items.InsertRange(i, items.GetRange(i, count));
+            i += count - 1;
         }
+    }
+
+    private int IndexOf(object item, int from)
+    {
+        while (!ReferenceEquals(Items[from], item))
+        {
+            from++;
+        }
+        return from;
     }
 
     public void Select(Feature feature)
