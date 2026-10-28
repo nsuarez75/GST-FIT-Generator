@@ -59,17 +59,19 @@
                 </Border>
             </Grid>
 
-            <Border Classes="card">
+            <!-- Plegado por defecto, para que la vista previa quede a mano -->
+            <Border Classes="card" Padding="4">
+                <Expander HorizontalAlignment="Stretch" IsExpanded="False">
+                    <Expander.Header>
+                        <TextBlock Classes="caption" Text="{l:T 'ESTILO Y LIENZO'}" VerticalAlignment="Center" />
+                    </Expander.Header>
                 <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Classes="caption" Text="{l:T 'ESTILO'}" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" Command="{Binding ResetStyleCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <c:Icon Kind="undo" />
-                                <TextBlock Text="{l:T 'Restaurar estilo por defecto'}" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
+                    <Button Command="{Binding ResetStyleCommand}" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <c:Icon Kind="undo" />
+                            <TextBlock Text="{l:T 'Restaurar estilo por defecto'}" />
+                        </StackPanel>
+                    </Button>
                     <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10">
                         <ItemsControl ItemsSource="{Binding Colors}">
                             <ItemsControl.ItemsPanel>
@@ -102,8 +104,32 @@
                             <TextBlock Classes="label" Text="{l:T 'Separación entre recuadros'}" />
                             <NumericUpDown Value="{Binding BoxGap}" Minimum="0" Maximum="{Binding MaxBoxGap}" Increment="1" FormatString="0" Width="110" />
                         </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{Binding FaceplateSize, StringFormat='Faceplate ({0})'}" />
+                            <NumericUpDown Value="{Binding FaceplateWidth}" Minimum="{Binding MinFaceplateWidth}" Maximum="{Binding MaxFaceplateWidth}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <TextBlock Classes="label" Text="{l:T 'Lienzo: márgenes de la zona donde van los recuadros (píxeles de la pantalla de 1920 × 966)'}" TextWrapping="Wrap" />
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10">
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Izquierda'}" />
+                            <NumericUpDown Value="{Binding MarginLeft}" Minimum="0" Maximum="{Binding MaxMargin}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Arriba'}" />
+                            <NumericUpDown Value="{Binding MarginTop}" Minimum="0" Maximum="{Binding MaxMargin}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Derecha'}" />
+                            <NumericUpDown Value="{Binding MarginRight}" Minimum="0" Maximum="{Binding MaxMargin}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Abajo'}" />
+                            <NumericUpDown Value="{Binding MarginBottom}" Minimum="0" Maximum="{Binding MaxMargin}" Increment="1" FormatString="0" Width="110" />
+                        </StackPanel>
                     </WrapPanel>
                 </StackPanel>
+                </Expander>
             </Border>
 
             <Border Classes="card" IsVisible="{Binding HasErrors}">
@@ -134,19 +160,71 @@
             <TextBlock Classes="muted" FontSize="12" IsVisible="{Binding !HasPages}"
                        Text="{l:T 'Elige la pantalla de inicio de alguna referencia para ver la vista previa.'}" />
             <StackPanel Spacing="8" IsVisible="{Binding HasPages}">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                     <TextBlock Classes="label" Text="{l:T 'Vista previa'}" VerticalAlignment="Center" />
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}" MinWidth="420">
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}" MinWidth="420" HorizontalAlignment="Left">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:TechPageOption">
                                 <TextBlock Classes="mono" Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
+                    <Button Grid.Column="2" Command="{Binding ResetAllBoxesCommand}" ToolTip.Tip="{l:T 'Quita todos los retoques: los recuadros vuelven a colocarse solos'}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <c:Icon Kind="undo" />
+                            <TextBlock Text="{l:T 'Recolocar todo automáticamente'}" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="{l:T 'Pulsa un recuadro para elegirlo y arrástralo para moverlo. Lo que no toques se sigue colocando solo.'}" />
+
+                <Border Classes="card" IsVisible="{Binding HasSelectedBox}">
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="18" LineSpacing="10">
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Recuadro'}" />
+                            <TextBlock Classes="mono" Text="{Binding SelectedBoxTitle}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Pantalla'}" />
+                            <ComboBox ItemsSource="{Binding BoxScreenOptions}" SelectedIndex="{Binding BoxScreenIndex}" Width="140" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="X" />
+                            <NumericUpDown Value="{Binding BoxLeft}" Minimum="0" Maximum="1920" Increment="8" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="Y" />
+                            <NumericUpDown Value="{Binding BoxTop}" Minimum="0" Maximum="966" Increment="8" FormatString="0" Width="110" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{l:T 'Filas por columna'}" />
+                            <NumericUpDown Value="{Binding BoxRows}" Minimum="1" Maximum="40" Increment="1" FormatString="0" Width="110"
+                                           PlaceholderText="{Binding BoxRowsHint, StringFormat='auto ({0})'}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4" IsVisible="{Binding CanSplit}">
+                            <TextBlock Classes="label" Text="{l:T 'Partir antes de'}" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ComboBox ItemsSource="{Binding SplitOptions}" SelectedItem="{Binding SplitAsset}" Width="140" />
+                                <Button Command="{Binding SplitCommand}" Content="{l:T 'Partir'}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text=" " />
+                            <Button Command="{Binding ResetBoxCommand}" ToolTip.Tip="{l:T 'Quita los retoques de este recuadro (y sus partes)'}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <c:Icon Kind="undo" />
+                                    <TextBlock Text="{l:T 'Colocación automática'}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </WrapPanel>
+                </Border>
+
                 <Border BorderBrush="{DynamicResource App.Border}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
                     <Viewbox Stretch="Uniform">
-                        <c:TechScreenPreview Page="{Binding SelectedPage.Page, FallbackValue={x:Null}}" Title="{Binding SelectedPage.Text, FallbackValue=''}" />
+                        <c:TechScreenPreview x:Name="Preview" Page="{Binding SelectedPage.Page, FallbackValue={x:Null}}" Title="{Binding SelectedPage.Text, FallbackValue=''}"
+                                             SelectedBox="{Binding SelectedBox}" />
                     </Viewbox>
                 </Border>
             </StackPanel>

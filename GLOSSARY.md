@@ -22,4 +22,6 @@ Vocabulario del proyecto. Se completa durante la entrevista inicial.
 - **Recuadro**: grupo de una pantalla de techs con las features de un Fixture (o, en la pantalla de reservas, las reservas de una referencia y tecnología). Dentro, una columna por Asset.
 - **Pantalla de inicio**: primera pantalla de techs de una referencia (o de las reservas). Si la referencia anterior no cabe, la siguiente se corre a la primera libre.
 - **Nombre corto**: nombre de un Asset o Fixture para las pantallas de techs (p. ej. `R10.1` en vez de `1000R1`). Si no tiene, se usa el real.
+- **Lienzo**: zona de la pantalla de techs donde van los recuadros, dada por cuatro márgenes en el estilo del proyecto.
+- **Retoque**: cambio a mano de un recuadro sobre el reparto automático: pantalla, posición, filas por columna o partirlo entre Assets. «Colocación automática» lo quita.
 - **Control de versiones**: lista de cambios del proyecto con fecha y descripción (hoja `Control Versiones`).

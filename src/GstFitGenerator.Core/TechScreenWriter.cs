@@ -48,8 +48,8 @@ public static class TechScreenWriter
             foreach (var r in b.Rows)
             {
                 row++;
-                items.Add(Text($"txtTech_{row}", r.Text, r.Left, r.Top + (TechScreens.FaceplateHeight - s.LabelHeight) / 2, r.LabelWidth, s.LabelHeight, s, title: false));
-                items.Add(Faceplate(r, row, tab++));
+                items.Add(Text($"txtTech_{row}", r.Text, r.Left, r.Top + (s.FaceplateHeight - s.LabelHeight) / 2, r.LabelWidth, s.LabelHeight, s, title: false));
+                items.Add(Faceplate(r, row, tab++, s));
             }
         }
 
@@ -110,12 +110,12 @@ public static class TechScreenWriter
         return field;
     }
 
-    private static XElement Faceplate(TechScreenRow row, int number, int tabIndex)
+    private static XElement Faceplate(TechScreenRow row, int number, int tabIndex, TechScreenStyle s)
     {
         var faceplate = Part("Hmi.Screen.FaceplateInstance");
         Set(faceplate, "ObjectName", $"fpTech_{number}");
         Set(faceplate, "TabIndex", Number(tabIndex));
-        Place(faceplate, row.FaceplateLeft, row.Top, TechScreens.FaceplateWidth, TechScreens.FaceplateHeight);
+        Place(faceplate, row.FaceplateLeft, row.Top, s.FaceplateWidth, s.FaceplateHeight);
         var tags = new Dictionary<string, string>
         {
             ["Status"] = $"Tech_Status_{row.MainPointer:000}",

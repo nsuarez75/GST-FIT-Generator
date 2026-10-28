@@ -98,6 +98,16 @@ Acordado en la entrevista del 2026-10-28.
 - Al generar, la descripción vacía de Screen Names de cada pantalla usada se rellena con «RefN Techs» o «Reservas».
 - La parte fija de cada pantalla es la del estándar SICAR@GST: plantilla `CC_0000_ScreenTemplate`, eventos `ClearScreen` y `GenerateScreen` (menú), botones Leyenda, Enclavamiento e I4.0, `ScreenLocking`, cabecera y subtítulo con la lista `CO_Traceability_ID` y `Int_Value_<NN>`. Los botones de pantalla anterior y siguiente solo enlazan pantallas de la misma referencia (o de reservas).
 - Estilo de cada proyecto, en el bloque «Estilo»: colores (fondo y borde del recuadro, franja y texto del título, texto de las filas) con selector de color, letra del título y de las filas (8 a 30), alto de fila (más que el faceplate, hasta 80) y separación entre recuadros (0 a 60). «Restaurar estilo por defecto» vuelve al de serie: sobrio, con recuadros claros y el título en una franja, para que destaque el estado de los faceplates. La vista previa cambia al momento.
+- Lienzo (en el mismo bloque, ahora «Estilo y lienzo», plegado por defecto): los cuatro márgenes de la zona donde van los recuadros (de serie 16, 100, 16 y 126 en la pantalla de 1920×966) y el ancho del faceplate (16 a 80; el alto sale de su proporción 34×35, como permite el `TechLayout` con `KeepRatio`). La vista previa dibuja el lienzo con una línea discontinua.
+
+### Retoques a mano (acordado en la entrevista del 2026-10-28, #36)
+
+- El reparto sigue siendo automático; cada recuadro se puede **retocar** y lo que no se toca se sigue colocando solo, en los huecos que dejan los retocados.
+- En la vista previa, un clic elige un recuadro y arrastrarlo lo mueve, ajustado a una rejilla de 8 px. El recuadro elegido abre un panel con **Pantalla** (las de su referencia y «Pantalla nueva»), **X**, **Y**, **Filas por columna** (vacío: las que quepan), **Partir antes de** un Asset y **Colocación automática** (quita los retoques del recuadro y de sus partes). «Recolocar todo automáticamente» quita todos. Todo se puede deshacer.
+- Un recuadro solo va a pantallas de su referencia; «Pantalla nueva» añade una al final, y las referencias siguientes se corren con su aviso.
+- Partir solo entre Assets: la parte nueva es «Fixture (cont.)» y se mueve por su cuenta.
+- Si cambian las features, el recuadro retocado se queda donde está y crece; si pisa a otro retocado o se sale del lienzo, sale un aviso. También avisa de una pantalla que queda vacía.
+- Los retoques se guardan en el proyecto por referencia y Fixture, con la pantalla relativa a su referencia (cambiar la pantalla de inicio se los lleva). Si el Fixture cambia de nombre pero no de contenido, el retoque sigue: se reconoce por sus features (el recuadro que comparta al menos la mitad). Si ya no hay ninguno, el retoque no se aplica y sale un aviso.
 - Pendiente: no se comprueba que existan en el HMI las variables `Tech_Status_NNN` e `Int_Value_NNN` que se usan.
 
 

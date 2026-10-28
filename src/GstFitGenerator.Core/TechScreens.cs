@@ -1,5 +1,6 @@
 // Pantallas de techs del HMI: reparte las features de cada referencia (y las reservas) en recuadros por Fixture,
 // con una columna por Asset, y los recuadros en pantallas desde la pantalla de inicio de cada referencia.
+// Primero van los recuadros retocados a mano (TechBoxEdit) y luego los demás, en los huecos que queden.
 // Calcula posiciones en píxeles de la pantalla de 1920x966; la vista previa y el XML usan las mismas.
 using System.Globalization;
 
@@ -11,7 +12,20 @@ public sealed record TechScreenRow(string Text, int Reference, int Technology, i
     public int FaceplateLeft => Left + LabelWidth + TechScreens.LabelGap;
 }
 
-public sealed record TechScreenBox(string Title, int Left, int Top, int Width, int Height, IReadOnlyList<TechScreenRow> Rows);
+public sealed record TechScreenBox(string Title, int Left, int Top, int Width, int Height, IReadOnlyList<TechScreenRow> Rows)
+{
+    // Para retocarlo: Fixture (o «RefN:tecnología» en reservas), parte y features de todo el Fixture.
+    public string Key { get; init; } = "";
+    public int Part { get; init; }
+    public IReadOnlyList<string> FeatureIds { get; init; } = [];
+    // Assets de esta parte, en orden: donde se puede partir.
+    public IReadOnlyList<string> Assets { get; init; } = [];
+    public int RowsPerColumn { get; init; }
+    public bool IsManual { get; init; }
+
+    public int Right => Left + Width;
+    public int Bottom => Top + Height;
+}
 
 public sealed class TechScreenPage
 {
@@ -19,6 +33,8 @@ public sealed class TechScreenPage
     public int Number { get; init; }
     // Referencia de la pantalla; 0 en las de reservas.
     public int Reference { get; init; }
+    // Posición entre las pantallas de su referencia: 0 es la primera.
+    public int Index { get; init; }
     public bool IsReserves => Reference == 0;
     // Estilo con el que se ha repartido; el XML y la vista previa lo usan para colores y letras.
     public TechScreenStyle Style { get; init; } = new();
@@ -40,39 +56,45 @@ public sealed class TechScreenPlan
     // Pantalla anterior o siguiente del mismo contenido (misma referencia, o reservas), para los botones.
     public TechScreenPage? Neighbour(TechScreenPage page, int step) =>
         Find(page.Number + step) is { } other && other.Reference == page.Reference ? other : null;
+
+    public IEnumerable<TechScreenPage> PagesOf(int reference) => Pages.Where(p => p.Reference == reference);
 }
 
 public static class TechScreens
 {
-    // Zona de la pantalla para los recuadros: debajo de la cabecera y por encima del pie de la plantilla.
-    public const int AreaLeft = 16;
-    public const int AreaTop = 100;
-    public const int AreaRight = 1904;
-    public const int AreaBottom = 840;
-
     public const int Padding = 8;
-    public const int FaceplateWidth = 34;
-    public const int FaceplateHeight = 35;
     public const int LabelGap = 6;
     public const int ColumnGap = 16;
+    // Rejilla a la que se ajusta un recuadro movido a mano.
+    public const int Grid = 8;
 
     public const string NoFixture = "Sin fixture";
 
-    public static int RowsPerColumn(TechScreenStyle s) => (AreaBottom - AreaTop - s.TitleHeight - 2 * Padding) / s.RowHeight;
+    public static int RowsPerColumn(TechScreenStyle s) => Math.Max(1, (s.AreaBottom - s.AreaTop - s.TitleHeight - 2 * Padding) / s.RowHeight);
 
-    // Estilo con los valores dentro de lo que se puede dibujar: letras de 8 a 30 y filas más altas que el faceplate.
-    public static TechScreenStyle Clamp(TechScreenStyle style) => new()
+    // Estilo con los valores dentro de lo que se puede dibujar: letras de 8 a 30, filas más altas que el faceplate,
+    // márgenes de 0 a 400.
+    public static TechScreenStyle Clamp(TechScreenStyle style)
     {
-        BoxBack = style.BoxBack,
-        BoxBorder = style.BoxBorder,
-        TitleBack = style.TitleBack,
-        TitleFore = style.TitleFore,
-        LabelFore = style.LabelFore,
-        TitleFontSize = Math.Clamp(style.TitleFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
-        LabelFontSize = Math.Clamp(style.LabelFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
-        RowHeight = Math.Clamp(style.RowHeight, FaceplateHeight + 1, TechScreenStyle.MaxRowHeight),
-        BoxGap = Math.Clamp(style.BoxGap, 0, TechScreenStyle.MaxBoxGap),
-    };
+        var s = new TechScreenStyle
+        {
+            BoxBack = style.BoxBack,
+            BoxBorder = style.BoxBorder,
+            TitleBack = style.TitleBack,
+            TitleFore = style.TitleFore,
+            LabelFore = style.LabelFore,
+            TitleFontSize = Math.Clamp(style.TitleFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
+            LabelFontSize = Math.Clamp(style.LabelFontSize, TechScreenStyle.MinFontSize, TechScreenStyle.MaxFontSize),
+            BoxGap = Math.Clamp(style.BoxGap, 0, TechScreenStyle.MaxBoxGap),
+            MarginLeft = Math.Clamp(style.MarginLeft, 0, TechScreenStyle.MaxMargin),
+            MarginTop = Math.Clamp(style.MarginTop, 0, TechScreenStyle.MaxMargin),
+            MarginRight = Math.Clamp(style.MarginRight, 0, TechScreenStyle.MaxMargin),
+            MarginBottom = Math.Clamp(style.MarginBottom, 0, TechScreenStyle.MaxMargin),
+            FaceplateWidth = Math.Clamp(style.FaceplateWidth, TechScreenStyle.MinFaceplateWidth, TechScreenStyle.MaxFaceplateWidth),
+        };
+        s.RowHeight = Math.Clamp(style.RowHeight, s.FaceplateHeight + 1, Math.Max(TechScreenStyle.MaxRowHeight, s.FaceplateHeight + 1));
+        return s;
+    }
 
     public static TechScreenPlan Plan(Project project)
     {
@@ -84,23 +106,23 @@ public static class TechScreens
         {
             if (settings.ReferenceStarts.TryGetValue(reference.Number, out var start))
             {
-                chains.Add((start, reference.Number, ReferenceBoxes(project, reference, plan, style)));
+                chains.Add((start, reference.Number, ApplyEdits(project, reference.Number, ReferenceBoxes(project, reference, plan), plan, style)));
             }
         }
         if (settings.ReservesStart is int reservesStart)
         {
-            chains.Add((reservesStart, 0, ReserveBoxes(project, style)));
+            chains.Add((reservesStart, 0, ApplyEdits(project, 0, ReserveBoxes(project), plan, style)));
         }
 
         var nextFree = 1;
         foreach (var (start, reference, boxes) in chains.OrderBy(c => c.Start).ThenBy(c => c.Reference == 0).ThenBy(c => c.Reference))
         {
-            var pages = Pack(boxes, style);
+            var name = reference == 0 ? L.T("Reservas") : $"Ref{reference}";
+            var pages = Pack(boxes, style, name, plan);
             if (pages.Count == 0)
             {
                 continue;
             }
-            var name = reference == 0 ? L.T("Reservas") : $"Ref{reference}";
             var first = Math.Max(start, nextFree);
             if (first != start)
             {
@@ -113,7 +135,7 @@ public static class TechScreens
             }
             for (var i = 0; i < pages.Count && first + i <= Screen.Count; i++)
             {
-                var page = new TechScreenPage { Number = first + i, Reference = reference, Style = style };
+                var page = new TechScreenPage { Number = first + i, Reference = reference, Index = i, Style = style };
                 page.Boxes.AddRange(pages[i]);
                 plan.Pages.Add(page);
             }
@@ -141,14 +163,22 @@ public static class TechScreens
     // ---------------------------------------------------------------- recuadros
 
     // Recuadro antes de colocarlo: título y sus grupos (cada Asset, o la tecnología en las reservas) con sus filas
-    // en orden. Las columnas se forman al colocarlo, según el sitio que haya.
-    private sealed record Box(string Title, List<List<Item>> Groups);
+    // en orden. Las columnas se forman al colocarlo, según el sitio que haya. Placement: el retoque de esta parte.
+    private sealed record Box(string Title, List<Group> Groups)
+    {
+        public string Key { get; init; } = "";
+        public int Part { get; init; }
+        public List<string> FeatureIds { get; init; } = [];
+        public TechBoxPart? Placement { get; init; }
+    }
+
+    private sealed record Group(string Asset, List<Item> Items);
 
     private sealed record Item(string Text, int Reference, int Technology, int Pointer, int MainPointer);
 
     // Un recuadro por Fixture en el orden de la lista; dentro, un grupo por Asset ordenados por nombre y las filas
     // por Main Pointer. La feature sale una sola vez, en su primer Fixture.
-    private static List<Box> ReferenceBoxes(Project project, Reference reference, TechScreenPlan plan, TechScreenStyle s)
+    private static List<Box> ReferenceBoxes(Project project, Reference reference, TechScreenPlan plan)
     {
         var shortNames = project.TechScreens;
         var rows = Layout.Rows(project, reference).Where(r => r.Technology != 0 && !r.Feature.IsReserve).ToList();
@@ -164,11 +194,11 @@ public static class TechScreens
             var groups = fixture
                 .GroupBy(r => r.Feature.Fixtures.FirstOrDefault()?.LayoutName ?? "")
                 .OrderBy(g => g.Key, NaturalComparer.Instance)
-                .Select(asset => asset.OrderBy(r => r.MainPointer)
+                .Select(asset => new Group(asset.Key, asset.OrderBy(r => r.MainPointer)
                     .Select(r => new Item(RowText(shortNames, asset.Key, r.Feature.ClientReference), reference.Number, r.Technology, r.Pointer, r.MainPointer))
-                    .ToList())
+                    .ToList()))
                 .ToList();
-            boxes.AddRange(SplitWide(title, groups, s));
+            boxes.Add(new Box(title, groups) { Key = fixture.Key, FeatureIds = fixture.Select(r => r.Feature.Id).ToList() });
         }
         return boxes;
     }
@@ -177,7 +207,7 @@ public static class TechScreens
         asset.Length > 0 ? $"{settings.ShortName(asset)} - {client}" : client;
 
     // Un recuadro por referencia y tecnología con sus reservas; el texto es «Tecnología - Pointer».
-    private static List<Box> ReserveBoxes(Project project, TechScreenStyle s)
+    private static List<Box> ReserveBoxes(Project project)
     {
         var boxes = new List<Box>();
         foreach (var reference in project.References.OrderBy(r => r.Number))
@@ -188,10 +218,79 @@ public static class TechScreens
                 var items = tech.OrderBy(r => r.Pointer)
                     .Select(r => new Item(string.Create(CultureInfo.InvariantCulture, $"{name} - {r.Pointer}"), reference.Number, r.Technology, r.Pointer, r.MainPointer))
                     .ToList();
-                boxes.AddRange(SplitWide($"Ref{reference.Number} · {name}", [items], s));
+                boxes.Add(new Box($"Ref{reference.Number} · {name}", [new Group("", items)])
+                {
+                    Key = string.Create(CultureInfo.InvariantCulture, $"Ref{reference.Number}:{tech.Key}"),
+                    FeatureIds = tech.Select(r => r.Feature.Id).ToList(),
+                });
             }
         }
         return boxes;
+    }
+
+    // Busca el retoque de cada recuadro (por Fixture o, si cambió de nombre, por sus features), lo parte donde diga
+    // el retoque y, si es más ancho que la pantalla, también solo. Cada parte lleva su colocación a mano, si la tiene.
+    private static List<Box> ApplyEdits(Project project, int chain, List<Box> boxes, TechScreenPlan plan, TechScreenStyle s)
+    {
+        var edits = project.TechScreens.BoxEdits.Where(e => e.Reference == chain).ToList();
+        var byBox = new Dictionary<Box, TechBoxEdit>();
+        foreach (var box in boxes)
+        {
+            if (edits.FirstOrDefault(e => e.Key == box.Key) is { } edit)
+            {
+                byBox[box] = edit;
+                edits.Remove(edit);
+            }
+        }
+        // Un retoque sin su Fixture pasa al recuadro sin retoque que comparta con él al menos la mitad de las features.
+        foreach (var edit in edits.ToList())
+        {
+            var ids = edit.FeatureIds.ToHashSet();
+            var match = boxes.Where(b => !byBox.ContainsKey(b))
+                .Select(b => (Box: b, Shared: b.FeatureIds.Count(ids.Contains)))
+                .Where(x => x.Shared > 0 && x.Shared * 2 >= ids.Count)
+                .OrderByDescending(x => x.Shared)
+                .Select(x => x.Box)
+                .FirstOrDefault();
+            if (match is not null)
+            {
+                byBox[match] = edit;
+                edits.Remove(edit);
+            }
+        }
+        foreach (var edit in edits)
+        {
+            plan.Warnings.Add(L.T("{0}: los retoques de «{1}» ya no corresponden a ningún recuadro y no se aplican.", chain == 0 ? L.T("Reservas") : $"Ref{chain}", edit.Key));
+        }
+
+        var result = new List<Box>();
+        foreach (var box in boxes)
+        {
+            var edit = byBox.GetValueOrDefault(box);
+            var parts = new List<List<Group>>();
+            foreach (var group in box.Groups)
+            {
+                if (parts.Count == 0 || (edit?.SplitBefore.Contains(group.Asset) ?? false))
+                {
+                    parts.Add([]);
+                }
+                parts[^1].Add(group);
+            }
+            var index = 0;
+            foreach (var part in parts.SelectMany(p => SplitWide(p, s)))
+            {
+                var current = index;
+                result.Add(box with
+                {
+                    Title = current == 0 ? box.Title : $"{box.Title} (cont.)",
+                    Groups = part,
+                    Part = current,
+                    Placement = edit?.Parts.FirstOrDefault(p => p.Part == current),
+                });
+                index++;
+            }
+        }
+        return result;
     }
 
     // Columnas de un recuadro con un máximo de filas por columna: un grupo largo se reparte en varias columnas de
@@ -199,41 +298,40 @@ public static class TechScreens
     private static List<List<Item>> Columns(Box box, int maxRows) =>
         box.Groups.SelectMany(group =>
         {
-            var count = (group.Count + maxRows - 1) / maxRows;
-            var perColumn = (group.Count + count - 1) / count;
-            return group.Chunk(perColumn).Select(c => c.ToList());
+            var count = (group.Items.Count + maxRows - 1) / maxRows;
+            var perColumn = (group.Items.Count + count - 1) / count;
+            return group.Items.Chunk(perColumn).Select(c => c.ToList());
         }).ToList();
 
-    // Un recuadro más ancho que la pantalla, con las columnas más altas posibles, sigue en otro con el título
-    // «(cont.)». Se parte entre grupos; un grupo no se parte.
-    private static IEnumerable<Box> SplitWide(string title, List<List<Item>> groups, TechScreenStyle s)
+    // Grupos de un recuadro más ancho que la pantalla, con las columnas más altas posibles, partidos en varios.
+    // Se parte entre grupos; un grupo no se parte.
+    private static IEnumerable<List<Group>> SplitWide(List<Group> groups, TechScreenStyle s)
     {
-        var current = new List<List<Item>>();
-        var part = 0;
+        var current = new List<Group>();
         foreach (var group in groups)
         {
-            if (current.Count > 0 && Width(Columns(new Box(title, [.. current, group]), RowsPerColumn(s)), s) > AreaRight - AreaLeft)
+            if (current.Count > 0 && Width(Columns(new Box("", [.. current, group]), RowsPerColumn(s)), s) > s.AreaRight - s.AreaLeft)
             {
-                yield return new Box(part++ == 0 ? title : $"{title} (cont.)", current);
+                yield return current;
                 current = [];
             }
             current.Add(group);
         }
         if (current.Count > 0)
         {
-            yield return new Box(part == 0 ? title : $"{title} (cont.)", current);
+            yield return current;
         }
     }
 
     private static int LabelWidth(List<Item> column, TechScreenStyle s) => Math.Max(60, column.Max(i => i.Text.Length) * s.CharWidth + 6);
 
-    private static int ColumnWidth(List<Item> column, TechScreenStyle s) => LabelWidth(column, s) + LabelGap + FaceplateWidth;
+    private static int ColumnWidth(List<Item> column, TechScreenStyle s) => LabelWidth(column, s) + LabelGap + s.FaceplateWidth;
 
     private static int Width(List<List<Item>> columns, TechScreenStyle s) =>
         2 * Padding + columns.Sum(c => ColumnWidth(c, s)) + ColumnGap * (columns.Count - 1);
 
     private static int Height(List<List<Item>> columns, TechScreenStyle s) =>
-        s.TitleHeight + 2 * Padding + columns.Max(c => c.Count) * s.RowHeight - (s.RowHeight - FaceplateHeight);
+        s.TitleHeight + 2 * Padding + columns.Max(c => c.Count) * s.RowHeight - (s.RowHeight - s.FaceplateHeight);
 
     // ---------------------------------------------------------------- colocación
 
@@ -246,43 +344,93 @@ public static class TechScreens
         public int Bottom => Top + Height;
     }
 
-    // Coloca los recuadros en orden, cada uno en el hueco libre más arriba (y luego más a la izquierda). Si no cabe
-    // con las columnas más altas, prueba con columnas más bajas (más anchas); si aun así no cabe, pantalla nueva.
-    // Un recuadro no se parte entre pantallas.
-    private static List<List<TechScreenBox>> Pack(List<Box> boxes, TechScreenStyle s)
+    // Coloca los recuadros de una referencia. Primero los movidos a mano a su sitio, luego los que solo tienen
+    // pantalla en el primer hueco de esa pantalla y, por último, los demás en orden: cada uno en el hueco libre más
+    // arriba (y luego más a la izquierda) desde la pantalla del anterior; si no cabe con las columnas más altas,
+    // prueba con columnas más bajas; si aun así no cabe, pantalla siguiente. Un recuadro no se parte entre pantallas.
+    private static List<List<TechScreenBox>> Pack(List<Box> boxes, TechScreenStyle s, string name, TechScreenPlan plan)
     {
         var pages = new List<List<TechScreenBox>>();
-        var page = new List<TechScreenBox>();
-        foreach (var box in boxes)
+        List<TechScreenBox> PageAt(int index)
         {
-            var placed = TryPlace(box, page, s);
-            if (placed is null && page.Count > 0)
+            while (pages.Count <= index)
             {
-                pages.Add(page);
-                page = [];
-                placed = TryPlace(box, page, s);
+                pages.Add([]);
             }
-            // En una pantalla vacía siempre se coloca, aunque se salga (un recuadro enorme): mejor verlo que perderlo.
-            page.Add(placed ?? Place(box, Columns(box, RowsPerColumn(s)), AreaLeft, AreaTop, s));
+            return pages[index];
         }
-        if (page.Count > 0)
+
+        foreach (var box in boxes.Where(b => b.Placement is { Screen: not null, Left: not null, Top: not null }))
         {
-            pages.Add(page);
+            var p = box.Placement!;
+            PageAt(p.Screen!.Value).Add(Place(box, Columns(box, Rows(box, s)), p.Left!.Value, p.Top!.Value, s, manual: true));
+        }
+        foreach (var box in boxes.Where(b => b.Placement is { Screen: not null } && (b.Placement.Left is null || b.Placement.Top is null)))
+        {
+            var page = PageAt(box.Placement!.Screen!.Value);
+            page.Add(TryPlace(box, page, s) ?? Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, s, manual: true));
+        }
+        var cursor = 0;
+        foreach (var box in boxes.Where(b => b.Placement?.Screen is null))
+        {
+            while (true)
+            {
+                var page = PageAt(cursor);
+                if (TryPlace(box, page, s) is { } placed)
+                {
+                    page.Add(placed);
+                    break;
+                }
+                if (page.Count == 0)
+                {
+                    // En una pantalla vacía siempre se coloca, aunque se salga (un recuadro enorme): mejor verlo que perderlo.
+                    page.Add(Place(box, Columns(box, Rows(box, s)), s.AreaLeft, s.AreaTop, s, manual: false));
+                    break;
+                }
+                cursor++;
+            }
+        }
+
+        for (var i = 0; i < pages.Count; i++)
+        {
+            if (pages[i].Count == 0)
+            {
+                plan.Warnings.Add(L.T("{0}: su pantalla {1} queda vacía.", name, i + 1));
+            }
+            foreach (var box in pages[i].Where(b => b.IsManual))
+            {
+                if (box.Left < s.AreaLeft || box.Top < s.AreaTop || box.Right > s.AreaRight || box.Bottom > s.AreaBottom)
+                {
+                    plan.Warnings.Add(L.T("{0}: «{1}» se sale del lienzo de su pantalla {2}.", name, box.Title, i + 1));
+                }
+                foreach (var other in pages[i].Where(o => o != box && Overlaps(Of(o), Of(box), 0)))
+                {
+                    plan.Warnings.Add(L.T("{0}: «{1}» pisa a «{2}» en su pantalla {3}.", name, box.Title, other.Title, i + 1));
+                }
+            }
         }
         return pages;
     }
 
+    private static Rect Of(TechScreenBox b) => new(b.Left, b.Top, b.Width, b.Height);
+
+    // Filas por columna del recuadro: las del retoque o las que quepan.
+    private static int Rows(Box box, TechScreenStyle s) => box.Placement?.RowsPerColumn is int r and > 0 ? r : RowsPerColumn(s);
+
     private static TechScreenBox? TryPlace(Box box, List<TechScreenBox> page, TechScreenStyle s)
     {
-        var taken = page.Select(b => new Rect(b.Left, b.Top, b.Width, b.Height)).ToList();
-        var maxRows = box.Groups.Max(g => g.Count);
-        for (var rows = Math.Min(RowsPerColumn(s), maxRows); rows >= Math.Min(MinRowsPerColumn, maxRows); rows--)
+        var taken = page.Select(Of).ToList();
+        var maxRows = box.Groups.Max(g => g.Items.Count);
+        var fixedRows = box.Placement?.RowsPerColumn is int r and > 0 ? r : (int?)null;
+        var from = fixedRows ?? Math.Min(RowsPerColumn(s), maxRows);
+        var to = fixedRows ?? Math.Min(MinRowsPerColumn, maxRows);
+        for (var rows = from; rows >= to; rows--)
         {
             var columns = Columns(box, rows);
             var (w, h) = (Width(columns, s), Height(columns, s));
-            if (FindSpot(taken, w, h, s.BoxGap) is { } spot)
+            if (FindSpot(taken, w, h, s) is { } spot)
             {
-                return Place(box, columns, spot.Left, spot.Top, s);
+                return Place(box, columns, spot.Left, spot.Top, s, manual: box.Placement is not null);
             }
         }
         return null;
@@ -290,19 +438,21 @@ public static class TechScreens
 
     // Hueco libre más arriba y más a la izquierda para un recuadro de w x h. Se prueban la esquina de la zona y,
     // por cada recuadro ya colocado, a su derecha y debajo.
-    private static Rect? FindSpot(List<Rect> taken, int w, int h, int gap)
+    private static Rect? FindSpot(List<Rect> taken, int w, int h, TechScreenStyle s)
     {
-        var candidates = new List<(int X, int Y)> { (AreaLeft, AreaTop) };
+        var gap = s.BoxGap;
+        var candidates = new List<(int X, int Y)> { (s.AreaLeft, s.AreaTop) };
         foreach (var r in taken)
         {
             candidates.Add((r.Right + gap, r.Top));
             candidates.Add((r.Left, r.Bottom + gap));
-            candidates.Add((AreaLeft, r.Bottom + gap));
+            candidates.Add((s.AreaLeft, r.Bottom + gap));
         }
         foreach (var (x, y) in candidates.Distinct().OrderBy(c => c.Y).ThenBy(c => c.X))
         {
             var spot = new Rect(x, y, w, h);
-            if (spot.Right <= AreaRight && spot.Bottom <= AreaBottom && !taken.Any(t => Overlaps(t, spot, gap)))
+            if (spot.Left >= s.AreaLeft && spot.Top >= s.AreaTop && spot.Right <= s.AreaRight && spot.Bottom <= s.AreaBottom
+                && !taken.Any(t => Overlaps(t, spot, gap)))
             {
                 return spot;
             }
@@ -313,7 +463,7 @@ public static class TechScreens
     private static bool Overlaps(Rect a, Rect b, int gap) =>
         a.Left < b.Right + gap && b.Left < a.Right + gap && a.Top < b.Bottom + gap && b.Top < a.Bottom + gap;
 
-    private static TechScreenBox Place(Box box, List<List<Item>> columns, int left, int top, TechScreenStyle s)
+    private static TechScreenBox Place(Box box, List<List<Item>> columns, int left, int top, TechScreenStyle s, bool manual)
     {
         var rows = new List<TechScreenRow>();
         var x = left + Padding;
@@ -326,10 +476,105 @@ public static class TechScreens
                 rows.Add(new TechScreenRow(item.Text, item.Reference, item.Technology, item.Pointer, item.MainPointer, x, y, labelWidth));
                 y += s.RowHeight;
             }
-            x += labelWidth + LabelGap + FaceplateWidth + ColumnGap;
+            x += labelWidth + LabelGap + s.FaceplateWidth + ColumnGap;
         }
-        return new TechScreenBox(box.Title, left, top, Width(columns, s), Height(columns, s), rows);
+        return new TechScreenBox(box.Title, left, top, Width(columns, s), Height(columns, s), rows)
+        {
+            Key = box.Key,
+            Part = box.Part,
+            FeatureIds = box.FeatureIds,
+            Assets = box.Groups.Select(g => g.Asset).ToList(),
+            RowsPerColumn = columns.Max(c => c.Count),
+            IsManual = manual,
+        };
     }
+}
+
+// Retoques a mano de los recuadros: mover, cambiar de pantalla, filas por columna, partir y volver a automático.
+// La referencia del retoque es la de las pantallas donde está el recuadro (0 en las de reservas).
+public static class TechScreenEdits
+{
+    public static TechBoxEdit EditOf(Project project, TechScreenPage page, TechScreenBox box)
+    {
+        var edits = project.TechScreens.BoxEdits;
+        var chain = page.Reference;
+        var edit = edits.FirstOrDefault(e => e.Reference == chain && e.Key == box.Key);
+        if (edit is null)
+        {
+            // Si el Fixture cambió de nombre, el retoque que tenía sigue siendo el suyo.
+            var ids = box.FeatureIds.ToHashSet();
+            edit = edits.FirstOrDefault(e => e.Reference == chain && e.FeatureIds.Any(ids.Contains) && e.FeatureIds.Count(ids.Contains) * 2 >= e.FeatureIds.Count);
+            if (edit is null)
+            {
+                edit = new TechBoxEdit { Reference = chain };
+                edits.Add(edit);
+            }
+        }
+        edit.Key = box.Key;
+        edit.FeatureIds = [.. box.FeatureIds];
+        return edit;
+    }
+
+    private static TechBoxPart PartOf(TechBoxEdit edit, int part)
+    {
+        var p = edit.Parts.FirstOrDefault(x => x.Part == part);
+        if (p is null)
+        {
+            p = new TechBoxPart { Part = part };
+            edit.Parts.Add(p);
+        }
+        return p;
+    }
+
+    // Lo deja en (left, top) de su pantalla, ajustado a la rejilla, con las columnas que tiene ahora.
+    public static void Move(Project project, TechScreenPage page, TechScreenBox box, int left, int top)
+    {
+        var p = PartOf(EditOf(project, page, box), box.Part);
+        p.Screen = page.Index;
+        p.Left = Snap(left);
+        p.Top = Snap(top);
+        p.RowsPerColumn ??= box.RowsPerColumn;
+    }
+
+    // Lo manda a otra pantalla de su referencia (screen: 0 es la primera; una más que las que hay, pantalla nueva),
+    // donde busca hueco solo.
+    public static void ToScreen(Project project, TechScreenPage page, TechScreenBox box, int screen)
+    {
+        var p = PartOf(EditOf(project, page, box), box.Part);
+        p.Screen = screen;
+        p.Left = null;
+        p.Top = null;
+    }
+
+    // Filas por columna; null vuelve a las que quepan. Se queda en su pantalla y en su sitio.
+    public static void SetRows(Project project, TechScreenPage page, TechScreenBox box, int? rows)
+    {
+        var p = PartOf(EditOf(project, page, box), box.Part);
+        p.RowsPerColumn = rows is > 0 ? rows : null;
+        p.Screen ??= page.Index;
+        p.Left ??= box.Left;
+        p.Top ??= box.Top;
+    }
+
+    // Parte el recuadro antes de un Asset: ese Asset y los siguientes van a otra parte «(cont.)». Las partes que
+    // vienen detrás se vuelven a colocar solas.
+    public static void Split(Project project, TechScreenPage page, TechScreenBox box, string asset)
+    {
+        var edit = EditOf(project, page, box);
+        if (!edit.SplitBefore.Contains(asset))
+        {
+            edit.SplitBefore.Add(asset);
+        }
+        edit.Parts.RemoveAll(p => p.Part > box.Part);
+    }
+
+    // Quita todos los retoques del recuadro (todas sus partes): vuelve a colocarse solo.
+    public static void Reset(Project project, TechScreenPage page, TechScreenBox box) =>
+        project.TechScreens.BoxEdits.Remove(EditOf(project, page, box));
+
+    public static void ResetAll(Project project) => project.TechScreens.BoxEdits.Clear();
+
+    public static int Snap(int value) => (int)Math.Round(value / (double)TechScreens.Grid) * TechScreens.Grid;
 }
 
 // Orden por nombre con los números en su orden: 5000R2 antes que 5000R10.

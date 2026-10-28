@@ -148,15 +148,58 @@ public sealed class TechScreenSettings
     public string ShortName(string name) => ShortNames.TryGetValue(name, out var s) && s.Length > 0 ? s : name;
 
     public TechScreenStyle Style { get; set; } = new();
+
+    // Retoques a mano de los recuadros: dónde va cada uno y cómo se parte. Lo que no está aquí se coloca solo.
+    public List<TechBoxEdit> BoxEdits { get; set; } = [];
+}
+
+// Retoques de un recuadro (un Fixture de una referencia, o una tecnología de una referencia en las reservas).
+public sealed class TechBoxEdit
+{
+    // Referencia de las pantallas donde va: la del recuadro, o 0 en las de reservas.
+    public int Reference { get; set; }
+    // Fixture del recuadro (en las reservas, "Ref1:2": referencia y tecnología).
+    public string Key { get; set; } = "";
+    // Features del recuadro al retocarlo: si el Fixture cambia de nombre, el retoque se reconoce por ellas.
+    public List<string> FeatureIds { get; set; } = [];
+    // Assets que empiezan una parte nueva del recuadro («partir aquí»).
+    public List<string> SplitBefore { get; set; } = [];
+    public List<TechBoxPart> Parts { get; set; } = [];
+}
+
+// Colocación a mano de una parte de un recuadro (0: la primera o el recuadro entero).
+public sealed class TechBoxPart
+{
+    public int Part { get; set; }
+    // Pantalla dentro de las de su referencia: 0 es la primera.
+    public int? Screen { get; set; }
+    // Posición en píxeles; sin ella, el recuadro busca hueco en su pantalla.
+    public int? Left { get; set; }
+    public int? Top { get; set; }
+    // Filas por columna; sin ella, las que quepan.
+    public int? RowsPerColumn { get; set; }
 }
 
 // Aspecto de las pantallas de techs. Colores en #RRGGBB; tamaños en píxeles de la pantalla del HMI.
 public sealed class TechScreenStyle
 {
+    public const int ScreenWidth = 1920;
+    public const int ScreenHeight = 966;
     public const int MinFontSize = 8;
     public const int MaxFontSize = 30;
     public const int MaxRowHeight = 80;
     public const int MaxBoxGap = 60;
+    public const int MaxMargin = 400;
+    public const int MinFaceplateWidth = 16;
+    public const int MaxFaceplateWidth = 80;
+
+    // Lienzo: márgenes de la zona donde van los recuadros (debajo de la cabecera y por encima del pie).
+    public int MarginLeft { get; set; } = 16;
+    public int MarginTop { get; set; } = 100;
+    public int MarginRight { get; set; } = 16;
+    public int MarginBottom { get; set; } = 126;
+    // Ancho del faceplate TechLayout; el alto sale de su proporción (34x35).
+    public int FaceplateWidth { get; set; } = 34;
 
     public string BoxBack { get; set; } = "#EEF1F5";
     public string BoxBorder { get; set; } = "#B0BAC8";
@@ -174,6 +217,12 @@ public sealed class TechScreenStyle
     public int LabelHeight => LabelFontSize + 11;
     // Ancho aproximado de un carácter del texto de fila (Tahoma negrita).
     public int CharWidth => (int)Math.Ceiling(LabelFontSize * 0.64);
+    public int FaceplateHeight => (int)Math.Round(FaceplateWidth * 35.0 / 34);
+
+    public int AreaLeft => MarginLeft;
+    public int AreaTop => MarginTop;
+    public int AreaRight => ScreenWidth - MarginRight;
+    public int AreaBottom => ScreenHeight - MarginBottom;
 }
 
 public static class TechScreenColors
