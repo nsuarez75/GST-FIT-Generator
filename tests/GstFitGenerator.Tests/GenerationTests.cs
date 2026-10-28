@@ -212,9 +212,12 @@ public class GenerationTests
             var written = Generation.Run(project, FakeProject.Catalog(), options, folder, date);
 
             Assert.Equal(Generation.Planned(project, options, folder, date), written);
-            Assert.Contains(Path.Combine(folder, "CheckTechTemplate_DB_Init_1000FIX02.scl"), written);
+            Assert.Contains(Path.Combine(folder, "CheckTech_DB", "CheckTechTemplate_DB_Init_1000FIX02.scl"), written);
+            Assert.Contains(Path.Combine(folder, "TableInfo_DB", "User_TableInfo_DB.db"), written);
+            Assert.Contains(Path.Combine(folder, "Config_Reference_FB", "User_Config_Reference_FB.awl"), written);
+            Assert.Single(written, f => Path.GetDirectoryName(f) == Path.Combine(folder, "Plantilla"));
             Assert.All(written, f => Assert.True(File.Exists(f)));
-            Assert.False(File.Exists(Path.Combine(folder, "PRUEBA_FIT_20261027.xlsx")));
+            Assert.False(Directory.Exists(Path.Combine(folder, "FIT")));
             Assert.Equal(Layout.Offsets(project), project.LastOffsets);
             Assert.Equal(folder, project.OutputFolder);
         }

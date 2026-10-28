@@ -21,7 +21,7 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 
 - Proyecto: un archivo `.fitproj` que se guarda donde se quiera y se puede exportar e importar.
 - Catálogo de tipos de feature: común a todos los proyectos. Se exporta e importa.
-- Salida: carpeta elegida por proyecto y recordada.
+- Salida: carpeta elegida por proyecto y recordada. Cada casilla escribe en su subcarpeta: `Plantilla/`, `FIT/`, `TableInfo_DB/`, `Config_Reference_FB/` y `CheckTech_DB/`.
 - La plantilla generada se llama `<nombre>_FIT_rev<N>_<fecha>.xlsx`, donde N es el número de revisión que el usuario pone a mano en el proyecto (al importar una plantilla se toma de su nombre), y el Excel FIT se llama `<nombre>_FIT_<fecha>.xlsx`.
 
 ## Proyecto

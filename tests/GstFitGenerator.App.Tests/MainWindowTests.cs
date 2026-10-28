@@ -557,10 +557,10 @@ public sealed class MainWindowTests : IDisposable
         await generate.GenerateCommand.ExecuteAsync(null);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
-        Assert.True(File.Exists(Path.Combine(output, ExcelWriters.TemplateFileName(main.Session.Project, today))));
-        Assert.True(File.Exists(Path.Combine(output, ExcelWriters.FitFileName(main.Session.Project, today))));
-        Assert.True(File.Exists(Path.Combine(output, "User_Config_Reference_FB.awl")));
-        Assert.True(File.Exists(Path.Combine(output, "CheckTechTemplate_DB_Init_1000FIX01.scl")));
+        Assert.True(File.Exists(Path.Combine(output, "Plantilla", ExcelWriters.TemplateFileName(main.Session.Project, today))));
+        Assert.True(File.Exists(Path.Combine(output, "FIT", ExcelWriters.FitFileName(main.Session.Project, today))));
+        Assert.True(File.Exists(Path.Combine(output, "Config_Reference_FB", "User_Config_Reference_FB.awl")));
+        Assert.True(File.Exists(Path.Combine(output, "CheckTech_DB", "CheckTechTemplate_DB_Init_1000FIX01.scl")));
         Assert.Equal("Primera generación", main.Session.Project.Versions[^1].Description);
         Assert.NotNull(main.Session.Project.LastOffsets);
         Assert.Contains(dialogs.Messages, m => m.Contains("User_TableInfo_DB.db"));
