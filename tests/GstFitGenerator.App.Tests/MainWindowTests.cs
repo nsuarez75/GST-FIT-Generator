@@ -345,6 +345,32 @@ public sealed class MainWindowTests : IDisposable
         Assert.Equal("0102001", Row(reference, "W3").Offset);
     }
 
+    [AvaloniaTheory]
+    [InlineData(1400)]
+    [InlineData(900)]
+    public async Task Un_tipo_largo_no_descuadra_las_columnas(double width)
+    {
+        var (window, main, _) = await Open(width);
+        main.Session.Catalog.Types.First(t => t.Number == 2).Detail = string.Concat(Enumerable.Repeat(" texto muy largo del tipo", 12));
+        var reference = ShowReference(main);
+        reference.ShowForm = false;
+        Dispatcher.UIThread.RunJobs();
+        var rows = window.GetVisualDescendants().OfType<ReferenceView>().Single().FindControl<ListBox>("Rows")!;
+        Rect Column(string client, int column)
+        {
+            var grid = rows.ContainerFromItem(Row(reference, client))!.GetVisualDescendants().OfType<Grid>().First();
+            var cell = grid.Children.First(c => Grid.GetColumn(c) == column);
+            return new Rect(cell.TranslatePoint(new Point(0, 0), window)!.Value, cell.Bounds.Size);
+        }
+
+        foreach (var column in new[] { 4, 5, 6 })
+        {
+            Assert.Equal(Column("W1", column).X, Column("W2_01", column).X, 0.5);
+            Assert.Equal(Column("W1", column).Width, Column("W2_01", column).Width, 0.5);
+        }
+        Shot(window, $"14-tipo-largo-{width}");
+    }
+
     [AvaloniaFact]
     public async Task Solo_se_puede_soltar_en_la_misma_tecnologia()
     {
