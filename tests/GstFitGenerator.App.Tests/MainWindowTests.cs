@@ -287,6 +287,92 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Expandir_una_tecnologia_con_muchas_features_es_rapido()
+    {
+        var (_, main, _) = await Open();
+        var features = main.Session.Project.References[0].Features;
+        for (var i = 0; i < 300; i++)
+        {
+            features.Insert(1, new Feature { ClientReference = $"N{i}", Type = 1, FeatureId = 20000 + i });
+        }
+        var reference = ShowReference(main);
+        var changes = 0;
+        reference.Items.CollectionChanged += (_, _) => changes++;
+
+        reference.ToggleAllCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(reference.Items.OfType<FeatureRowViewModel>());
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        reference.Items.OfType<BlockHeaderViewModel>().First(h => h.Technology == 2).ToggleCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        watch.Stop();
+
+        Assert.Equal(304, reference.Items.OfType<FeatureRowViewModel>().Count());
+        // Contraer y expandir avisan a la lista una vez por bloque, no una por fila.
+        Assert.True(changes <= 6, $"{changes} avisos a la lista");
+        Assert.True(watch.ElapsedMilliseconds < 1000, $"{watch.ElapsedMilliseconds} ms");
+
+        // Arrastrar de un extremo al otro de la tecnología también es un solo movimiento, en los dos sentidos.
+        var block = reference.Items.OfType<FeatureRowViewModel>().ToList();
+        changes = 0;
+        reference.Drop(block[0], block[^1]);
+        Assert.Equal(1, changes);
+        Assert.Equal(304, reference.Items.OfType<FeatureRowViewModel>().First(r => r.Feature == block[0].Feature).Row.Pointer);
+        changes = 0;
+        reference.Drop(block[0], reference.Items.OfType<FeatureRowViewModel>().First());
+        Assert.Equal(1, changes);
+        Assert.Equal(1, block[0].Row.Pointer);
+    }
+
+    [AvaloniaFact]
+    public async Task La_lista_siempre_queda_en_el_orden_de_la_referencia()
+    {
+        var (_, main, dialogs) = await Open();
+        dialogs.DeleteAnswer = DeleteChoice.Delete;
+        var reference = ShowReference(main);
+        var random = new Random(7);
+
+        for (var step = 0; step < 300; step++)
+        {
+            var rows = reference.Items.OfType<FeatureRowViewModel>().ToList();
+            reference.Selected = rows.Count > 0 ? rows[random.Next(rows.Count)] : null;
+            switch (random.Next(7))
+            {
+                case 0 or 1:
+                    reference.AddCommand.Execute(null);
+                    break;
+                case 2 when rows.Count > 3:
+                    await reference.DeleteCommand.ExecuteAsync(null);
+                    break;
+                case 3:
+                    reference.MoveUpCommand.Execute(null);
+                    break;
+                case 4:
+                    reference.MoveDownCommand.Execute(null);
+                    break;
+                case 5 when rows.Count > 1:
+                    reference.Drop(rows[random.Next(rows.Count)], rows[random.Next(rows.Count)]);
+                    break;
+                default:
+                    var headers = reference.Items.OfType<BlockHeaderViewModel>().ToList();
+                    headers[random.Next(headers.Count)].ToggleCommand.Execute(null);
+                    break;
+            }
+
+            // Lo mismo que montaría la lista desde cero: cabecera de cada tecnología y sus filas si está expandida.
+            var expected = Layout.Rows(main.Session.Project, reference.Reference).GroupBy(r => r.Technology)
+                .SelectMany(block =>
+                {
+                    var header = reference.Items.OfType<BlockHeaderViewModel>().Single(h => h.Technology == block.Key);
+                    return new[] { $"T{block.Key}" }.Concat(header.IsExpanded ? block.Select(r => r.Offset) : []);
+                });
+            var actual = reference.Items.Select(i => i is BlockHeaderViewModel h ? $"T{h.Technology}" : ((FeatureRowViewModel)i).Offset);
+            Assert.Equal(expected, actual);
+            Assert.All(reference.Items.OfType<FeatureRowViewModel>(), r => Assert.Same(r.Feature, Layout.Rows(main.Session.Project, reference.Reference).Single(l => l.Offset == r.Offset).Feature));
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Contraer_una_tecnologia_oculta_sus_filas_y_se_recuerda()
     {
         var (_, main, _) = await Open();
