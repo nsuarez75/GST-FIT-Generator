@@ -82,10 +82,16 @@ public sealed partial class MainViewModel : ObservableObject
     // Tecnologías contraídas en la vista de cada referencia (por número de referencia). Solo mientras la app está abierta.
     public Dictionary<int, HashSet<int>> CollapsedTechnologies { get; } = [];
 
+    // Editor de referencia que había antes de rehacer el árbol (deshacer, rehacer), para que el nuevo siga en su sitio.
+    private ReferenceViewModel? _previousReference;
+
     public void Rebuild()
     {
         var kind = SelectedNode?.Kind ?? NavKind.Project;
         var reference = SelectedNode?.Reference ?? 0;
+        // Si era una referencia, el editor nuevo se queda en la misma posición que el anterior. Se toma antes de
+        // vaciar el árbol, que deja el editor a null.
+        _previousReference = Editor as ReferenceViewModel;
         Tree.Clear();
         var root = new NavNode(NavKind.Project);
         root.Children.Add(new NavNode(NavKind.Technologies));
@@ -105,6 +111,7 @@ public sealed partial class MainViewModel : ObservableObject
         // Forzar un editor nuevo aunque el nodo elegido sea el mismo: el proyecto puede haber cambiado entero.
         SelectedNode = null;
         SelectedNode = FindNode(kind, reference) ?? (kind == NavKind.Reference ? FindNode(NavKind.References, 0) : null) ?? root;
+        _previousReference = null;
         OnChanged();
     }
 
@@ -143,7 +150,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedNodeChanged(NavNode? value)
     {
         var project = Session.Project;
-        Editor = value?.Kind switch
+        object? editor = value?.Kind switch
         {
             null => null,
             NavKind.Project => new ProjectEditorViewModel(this),
@@ -158,6 +165,11 @@ public sealed partial class MainViewModel : ObservableObject
             NavKind.Versions => new VersionsViewModel(Session),
             _ => new SizesViewModel(this),
         };
+        if (editor is ReferenceViewModel next && _previousReference is { } previous && previous.Reference.Number == next.Reference.Number)
+        {
+            next.TakeViewFrom(previous);
+        }
+        Editor = editor;
     }
 
     private void OnChanged()
