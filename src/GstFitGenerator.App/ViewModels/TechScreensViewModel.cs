@@ -175,6 +175,10 @@ public sealed partial class TechScreensViewModel : EditableViewModel
     // perderlo cuando el reparto se rehace (o cambia de pantalla).
     private (int Reference, string Key, int Part)? _selectedBox;
 
+    // Mientras se cambia el recuadro elegido, los controles del panel se rellenan de nuevo y algunos (el desplegable
+    // de pantalla al cambiar su lista) devuelven su valor anterior: eso no es un retoque y se ignora.
+    private bool _selecting;
+
     [ObservableProperty]
     public partial TechScreenBox? SelectedBox { get; set; }
 
@@ -192,7 +196,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         get => BoxPage?.Index ?? -1;
         set
         {
-            if (BoxPage is { } page && SelectedBox is { } box && value >= 0 && value != page.Index)
+            if (!_selecting && BoxPage is { } page && SelectedBox is { } box && value >= 0 && value != page.Index)
             {
                 EditBox("tech-box-screen", () => TechScreenEdits.ToScreen(Session.Project, page, box, value));
             }
@@ -204,7 +208,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         get => SelectedBox?.Left;
         set
         {
-            if (value is decimal left && SelectedBox is { } box && (int)left != box.Left)
+            if (!_selecting && value is decimal left && SelectedBox is { } box && (int)left != box.Left)
             {
                 OnBoxDragged(box, (int)left, box.Top);
             }
@@ -216,7 +220,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         get => SelectedBox?.Top;
         set
         {
-            if (value is decimal top && SelectedBox is { } box && (int)top != box.Top)
+            if (!_selecting && value is decimal top && SelectedBox is { } box && (int)top != box.Top)
             {
                 OnBoxDragged(box, box.Left, (int)top);
             }
@@ -229,7 +233,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         get => SelectedBox is { } box && ManualRows(box) is int rows ? rows : null;
         set
         {
-            if (BoxPage is { } page && SelectedBox is { } box && (int?)value != ManualRows(box))
+            if (!_selecting && BoxPage is { } page && SelectedBox is { } box && (int?)value != ManualRows(box))
             {
                 EditBox("tech-box-rows", () => TechScreenEdits.SetRows(Session.Project, page, box, (int?)value));
             }
@@ -301,22 +305,30 @@ public sealed partial class TechScreensViewModel : EditableViewModel
 
     private void SelectBox(TechScreenBox? box)
     {
-        SelectedBox = box;
-        var page = BoxPage;
-        BoxScreenOptions = page is null
-            ? []
-            : [.. Pages.Where(p => p.Page.Reference == page.Reference).Select(p => p.Page.Number.ToString("00", CultureInfo.InvariantCulture)), L.T("Pantalla nueva")];
-        SplitAsset = SplitOptions.FirstOrDefault();
-        OnPropertyChanged(nameof(HasSelectedBox));
-        OnPropertyChanged(nameof(SelectedBoxTitle));
-        OnPropertyChanged(nameof(BoxScreenOptions));
-        OnPropertyChanged(nameof(BoxScreenIndex));
-        OnPropertyChanged(nameof(BoxLeft));
-        OnPropertyChanged(nameof(BoxTop));
-        OnPropertyChanged(nameof(BoxRows));
-        OnPropertyChanged(nameof(BoxRowsHint));
-        OnPropertyChanged(nameof(SplitOptions));
-        OnPropertyChanged(nameof(CanSplit));
+        _selecting = true;
+        try
+        {
+            SelectedBox = box;
+            var page = BoxPage;
+            BoxScreenOptions = page is null
+                ? []
+                : [.. Pages.Where(p => p.Page.Reference == page.Reference).Select(p => p.Page.Number.ToString("00", CultureInfo.InvariantCulture)), L.T("Pantalla nueva")];
+            SplitAsset = SplitOptions.FirstOrDefault();
+            OnPropertyChanged(nameof(HasSelectedBox));
+            OnPropertyChanged(nameof(SelectedBoxTitle));
+            OnPropertyChanged(nameof(BoxScreenOptions));
+            OnPropertyChanged(nameof(BoxScreenIndex));
+            OnPropertyChanged(nameof(BoxLeft));
+            OnPropertyChanged(nameof(BoxTop));
+            OnPropertyChanged(nameof(BoxRows));
+            OnPropertyChanged(nameof(BoxRowsHint));
+            OnPropertyChanged(nameof(SplitOptions));
+            OnPropertyChanged(nameof(CanSplit));
+        }
+        finally
+        {
+            _selecting = false;
+        }
     }
 
     partial void OnSelectedPageChanged(TechPageOption? value)

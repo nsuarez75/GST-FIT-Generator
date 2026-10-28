@@ -665,6 +665,45 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Elegir_otro_recuadro_no_lo_mueve_de_pantalla()
+    {
+        var (_, main, _) = await Open();
+        main.SelectedNode = main.FindNode(NavKind.TechScreens);
+        Dispatcher.UIThread.RunJobs();
+        var screens = Assert.IsType<TechScreensViewModel>(main.Editor);
+        screens.Starts[0].SelectedIndex = 7;
+        Dispatcher.UIThread.RunJobs();
+        TechScreenBox Box(string title) => screens.SelectedPage!.Page.Boxes.Single(b => b.Title == title);
+
+        // 3000FIX01 y 4000FIX01 a una pantalla nueva (la 08).
+        screens.OnBoxClicked(Box("3000FIX01"));
+        screens.BoxScreenIndex = 1;
+        Dispatcher.UIThread.RunJobs();
+        screens.SelectedPage = screens.Pages.Single(p => p.Page.Number == 7);
+        Dispatcher.UIThread.RunJobs();
+        screens.OnBoxClicked(Box("4000FIX01"));
+        Dispatcher.UIThread.RunJobs();
+        screens.BoxScreenIndex = 1;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(8, screens.SelectedPage!.Page.Number);
+
+        // 3000FIX01 vuelve a la primera; luego, en la 08, se elige 4000FIX01 sin tocar nada.
+        screens.OnBoxClicked(Box("3000FIX01"));
+        Dispatcher.UIThread.RunJobs();
+        screens.BoxScreenIndex = 0;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(7, screens.SelectedPage!.Page.Number);
+        screens.SelectedPage = screens.Pages.Single(p => p.Page.Number == 8);
+        Dispatcher.UIThread.RunJobs();
+        screens.OnBoxClicked(Box("4000FIX01"));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(8, screens.SelectedPage!.Page.Number);
+        Assert.Contains(screens.SelectedPage.Page.Boxes, b => b.Title == "4000FIX01");
+        Assert.Equal(1, screens.BoxScreenIndex);
+    }
+
+    [AvaloniaFact]
     public async Task La_ficha_sale_cerrada_al_abrir_una_referencia()
     {
         var (_, main, _) = await Open();
