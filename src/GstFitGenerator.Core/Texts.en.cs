@@ -222,6 +222,7 @@ public static partial class L
         ["Archivos escritos en {0}:\n\n{1}"] = "Files written to {0}:\n\n{1}",
 
         // Pantallas de techs
+        ["Pantallas"] = "Screens",
         ["Pantallas de techs"] = "Tech screens",
         ["Pantallas de trazabilidad del HMI con un faceplate TechLayout por feature: un recuadro por Fixture y una columna por Asset. Cada referencia ocupa pantallas desde su pantalla de inicio; si no cabe, la siguiente se corre. Las reservas solo salen si tienen pantalla de inicio."] =
             "HMI traceability screens with one TechLayout faceplate per feature: one box per Fixture and one column per Asset. Each reference fills screens from its start screen; if it does not fit, the next one moves along. Spares only appear if they have a start screen.",

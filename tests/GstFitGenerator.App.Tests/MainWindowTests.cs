@@ -636,6 +636,19 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Un_solo_menu_de_pantallas_con_screen_names_y_techs()
+    {
+        var (_, main, _) = await Open();
+
+        var group = main.FindNode(NavKind.ScreenGroup)!;
+
+        Assert.Equal([NavKind.Screens, NavKind.TechScreens], group.Children.Select(c => c.Kind));
+        Assert.DoesNotContain(main.Tree[0].Children, c => c.Kind is NavKind.Screens or NavKind.TechScreens);
+        main.SelectedNode = group;
+        Assert.IsType<ScreensViewModel>(main.Editor);
+    }
+
+    [AvaloniaFact]
     public async Task Pantallas_de_techs_estilo_y_restaurar()
     {
         var (window, main, _) = await Open();
