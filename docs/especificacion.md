@@ -15,13 +15,13 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 
 - Sigue el estándar de interfaz de las apps nuevas, tomado de GST-LoS-Generator: mismo estilo, barra superior con iconos, tema claro, oscuro o según el sistema, idioma castellano o inglés, aviso de versión nueva, deshacer y rehacer, y aviso al cerrar con cambios sin guardar.
 - Ejecutables para Windows y Linux.
-- Panel izquierdo con el árbol del proyecto: datos del proyecto, tecnologías, locations, referencias, auxiliares, Screen Names, control de versiones y tamaños.
+- Panel izquierdo con el árbol del proyecto: datos del proyecto, tecnologías, locations, referencias, auxiliares, Screen Names, pantallas de techs, control de versiones y tamaños.
 
 ## Archivos
 
 - Proyecto: un archivo `.fitproj` que se guarda donde se quiera y se puede exportar e importar.
 - Catálogo de tipos de feature: común a todos los proyectos. Se exporta e importa.
-- Salida: carpeta elegida por proyecto y recordada. Cada casilla escribe en su subcarpeta: `Plantilla/`, `FIT/`, `TableInfo_DB/`, `Config_Reference_FB/` y `CheckTech_DB/`.
+- Salida: carpeta elegida por proyecto y recordada. Cada casilla escribe en su subcarpeta: `Plantilla/`, `FIT/`, `TableInfo_DB/`, `Config_Reference_FB/`, `CheckTech_DB/` y `Pantallas/`.
 - La plantilla generada se llama `<nombre>_FIT_rev<N>_<fecha>.xlsx`, donde N es el número de revisión que el usuario pone a mano en el proyecto (al importar una plantilla se toma de su nombre), y el Excel FIT se llama `<nombre>_FIT_<fecha>.xlsx`.
 
 ## Proyecto
@@ -82,7 +82,24 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 
 - 24 filas con nombre y descripción.
 - El nombre se rellena a partir de un prefijo del proyecto, que es el nombre de la primera pantalla sin `_Traceability_01` (p. ej. `CO_0000_100`). Como en TIA, el número del final del prefijo aumenta en uno en cada pantalla: `CO_0000_100_Traceability_01`, `CO_0000_101_Traceability_02` … `CO_0000_123_Traceability_24`. La descripción se escribe a mano.
-- Solo se usan para la hoja `Screens Names` de la plantilla.
+- Van a la hoja `Screens Names` de la plantilla, de donde sale la lista de textos `CO_Traceability_ID` del HMI: el subtítulo de cada pantalla de trazabilidad.
+
+## Pantallas de techs
+
+Acordado en la entrevista del 2026-10-28.
+
+- Pantallas de trazabilidad del HMI (WinCC Comfort/Advanced) con un faceplate `TechLayout` por feature, que enseña el estado de su tecnología. Se generan como XML para importar en TIA, una por pantalla, en `Pantallas/`.
+- En el árbol, «Pantallas de techs»: la **pantalla de inicio** de cada referencia y de las reservas (o «No»), los **nombres cortos** de Fixtures y Assets, los avisos del reparto y una **vista previa** de cada pantalla.
+- Recuadros: uno por Fixture, para todas las tecnologías, en el orden de la lista de features. El título es el Fixture o su nombre corto. Dentro, una columna por Asset, ordenadas por nombre de Asset; las filas, por Main Pointer. Una columna demasiado larga sigue en otra al lado; un recuadro más ancho que la pantalla sigue en otro con «(cont.)».
+- Cada fila: el texto «Asset - FeatureReferenceClient» (con el nombre corto del Asset si lo tiene) y su faceplate, con `Status = Tech_Status_<Main Pointer>`, `Position_tech_in = Int_Value_<Pointer>`, `Number_tech_in = Int_Value_<tecnología>` y `Reference_in = Int_Value_<referencia>`. Las salidas `Status_Out`, `Number_Tech_out`, `Pos_Tech_out` e `ID_out` van a `GlobalStatus`, `Form_TECH`, `Form_POS` y `Form_ID`.
+- Una feature hecha en varios Fixtures sale una sola vez, en el primero: la característica existe una vez en la pieza (los demás son estaciones duplicadas). Las de tecnología 0 no salen; las que no tienen Fixture van al recuadro «Sin fixture», con aviso.
+- Reparto: cada referencia llena pantallas desde su pantalla de inicio, y cada recuadro va en el hueco libre más arriba y a la izquierda; si no cabe, se prueba con columnas más bajas y, si aun así no cabe, pasa a la pantalla siguiente. Un recuadro no se parte entre pantallas. Si una referencia necesita más pantallas y pisa la de inicio de la siguiente, la siguiente se corre a la primera libre, con aviso. Pasar de la 24 es un error y no se genera.
+- Reservas: solo salen si tienen pantalla de inicio; todas las referencias la comparten, con un recuadro por referencia y tecnología y el texto «Tecnología - Pointer».
+- Al generar, la descripción vacía de Screen Names de cada pantalla usada se rellena con «RefN Techs» o «Reservas».
+- La parte fija de cada pantalla es la del estándar SICAR@GST: plantilla `CC_0000_ScreenTemplate`, eventos `ClearScreen` y `GenerateScreen` (menú), botones Leyenda, Enclavamiento e I4.0, `ScreenLocking`, cabecera y subtítulo con la lista `CO_Traceability_ID` y `Int_Value_<NN>`. Los botones de pantalla anterior y siguiente solo enlazan pantallas de la misma referencia (o de reservas).
+- Estilo sobrio: recuadros claros con borde fino y el título en una franja; lo que destaca es el estado de los faceplates.
+- Pendiente: no se comprueba que existan en el HMI las variables `Tech_Status_NNN` e `Int_Value_NNN` que se usan.
+
 
 ## Control de versiones
 
@@ -97,7 +114,7 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 
 ## Generar
 
-- Casillas para elegir qué se genera: las mismas que en GeneradorFIT, más «Plantilla Excel».
+- Casillas para elegir qué se genera: las mismas que en GeneradorFIT, más «Plantilla Excel» y «Pantallas de trazabilidad (XML)».
 - Plantilla Excel: una hoja `PLC-RefN` por referencia, con los grupos de fixture seguidos (tantos como haga falta, desplazando las columnas siguientes), V-Z (Feature Type, Tech, Pointer, Main Pointer, Offset) y AD-AK (las cuatro listas para el HMI). Además lleva las hojas `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`. No hace falta que GeneradorFIT V3 pueda leerla.
 - Excel FIT, `User_TableInfo_DB` (`TableInfo_1…N`, una tabla por cada columna de fixture usada), `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus init SCL: igual que GeneradorFIT V3.0.1, salvo que el número de tecnología se escribe siempre con 2 cifras (`Tech02`, `Tech10`).
 

@@ -17,5 +17,9 @@ Vocabulario del proyecto. Se completa durante la entrevista inicial.
 - **Reserva**: feature comodín de una tecnología («Reserva de <tecnología>») que ocupa un pointer para poder añadir features nuevas sin que se muevan las demás. No sale en el FIT, el FB ni CheckTechTemplate; en las listas del HMI sale con el texto `Reserva`. Se convierte en feature real cambiándole el tipo.
 - **Catálogo de tipos de feature**: la tabla de tipos de feature, común a todos los proyectos. La lista de tecnologías, la tecnología de cada tipo y las locations van en cada proyecto.
 - **Location**: puesto con nombre y número; en el FIT se escribe el número.
-- **Screen Names**: nombres de las 24 pantallas de trazabilidad del HMI.
+- **Screen Names**: nombres de las 24 pantallas de trazabilidad del HMI. El nombre de la pantalla n es `<prefijo>_<número+n−1>_Traceability_NN`; la descripción es el subtítulo de la pantalla (lista `CO_Traceability_ID`).
+- **Pantalla de techs**: pantalla de trazabilidad del HMI con un faceplate `TechLayout` por feature, que enseña el estado de su tecnología. La genera la app como XML para importar en TIA.
+- **Recuadro**: grupo de una pantalla de techs con las features de un Fixture (o, en la pantalla de reservas, las reservas de una referencia y tecnología). Dentro, una columna por Asset.
+- **Pantalla de inicio**: primera pantalla de techs de una referencia (o de las reservas). Si la referencia anterior no cabe, la siguiente se corre a la primera libre.
+- **Nombre corto**: nombre de un Asset o Fixture para las pantallas de techs (p. ej. `R10.1` en vez de `1000R1`). Si no tiene, se usa el real.
 - **Control de versiones**: lista de cambios del proyecto con fecha y descripción (hoja `Control Versiones`).

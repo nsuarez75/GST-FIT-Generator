@@ -13,6 +13,7 @@
         <DataTemplate DataType="vm:ReferenceViewModel"><v:ReferenceView /></DataTemplate>
         <DataTemplate DataType="vm:AuxiliariesViewModel"><v:AuxiliariesView /></DataTemplate>
         <DataTemplate DataType="vm:ScreensViewModel"><v:ScreensView /></DataTemplate>
+        <DataTemplate DataType="vm:TechScreensViewModel"><v:TechScreensView /></DataTemplate>
         <DataTemplate DataType="vm:VersionsViewModel"><v:VersionsView /></DataTemplate>
         <DataTemplate DataType="vm:SizesViewModel"><v:SizesView /></DataTemplate>
         <DataTemplate DataType="vm:CatalogViewModel"><v:CatalogView /></DataTemplate>

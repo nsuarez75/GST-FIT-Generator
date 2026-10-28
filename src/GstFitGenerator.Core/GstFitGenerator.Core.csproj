@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\User_Config_Reference_FB.header.awl" LogicalName="User_Config_Reference_FB.header.awl" />
+    <EmbeddedResource Include="Resources\TechScreen.template.xml" LogicalName="TechScreen.template.xml" />
+    <EmbeddedResource Include="Resources\TechScreen.parts.xml" LogicalName="TechScreen.parts.xml" />
   </ItemGroup>
 
   <ItemGroup>

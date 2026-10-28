@@ -28,6 +28,10 @@ public sealed partial class GenerateViewModel : ObservableObject
         {
             Notes.Add(issue.Text);
         }
+        foreach (var warning in Core.TechScreens.Plan(project).Warnings)
+        {
+            Notes.Add(warning);
+        }
         AddVersion = HasChanges;
     }
 
@@ -46,6 +50,7 @@ public sealed partial class GenerateViewModel : ObservableObject
     public bool TableInfoDb { get => _options.TableInfoDb; set => SetOption(_options.TableInfoDb, value, v => _options.TableInfoDb = v); }
     public bool ConfigReferenceFb { get => _options.ConfigReferenceFb; set => SetOption(_options.ConfigReferenceFb, value, v => _options.ConfigReferenceFb = v); }
     public bool CheckTechDb { get => _options.CheckTechDb; set => SetOption(_options.CheckTechDb, value, v => _options.CheckTechDb = v); }
+    public bool TechScreens { get => _options.TechScreens; set => SetOption(_options.TechScreens, value, v => _options.TechScreens = v); }
 
     private void SetOption(bool current, bool value, Action<bool> set, [System.Runtime.CompilerServices.CallerMemberName] string? property = null)
     {
@@ -108,6 +113,11 @@ public sealed partial class GenerateViewModel : ObservableObject
             }
             OutputFolder = folder;
         }
+        if (_options.TechScreens && Core.TechScreens.Plan(session.Project).Errors is { Count: > 0 } errors)
+        {
+            await dialogs.Message(L.T("Generar"), L.T("Las pantallas de techs no caben:\n{0}", string.Join("\n", errors)));
+            return;
+        }
         var existing = Generation.Planned(session.Project, _options, folder, Today).Where(File.Exists)
             .Select(f => Path.GetRelativePath(folder, f)).ToList();
         if (existing.Count > 0 && !await dialogs.Confirm(L.T("Sobrescribir"),
@@ -120,12 +130,17 @@ public sealed partial class GenerateViewModel : ObservableObject
         List<string> written;
         try
         {
-            // La entrada de versiones va antes, para que salga en la plantilla que se genera ahora.
+            // La entrada de versiones y las descripciones de las pantallas de techs van antes, para que salgan en la
+            // plantilla que se genera ahora y se puedan deshacer.
             session.Change("generate", () =>
             {
                 if (AddVersion && VersionText.Trim().Length > 0)
                 {
                     session.Project.Versions.Add(new VersionEntry { Date = Today, Description = VersionText.Trim() });
+                }
+                if (_options.TechScreens)
+                {
+                    Core.TechScreens.FillDescriptions(session.Project, Core.TechScreens.Plan(session.Project));
                 }
             });
             var project = session.Project;

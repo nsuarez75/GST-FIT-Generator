@@ -53,6 +53,7 @@
                             <CheckBox IsChecked="{Binding TableInfoDb}"><TextBlock Text="{l:T 'DB User_TableInfo_DB'}" /></CheckBox>
                             <CheckBox IsChecked="{Binding ConfigReferenceFb}"><TextBlock Text="{l:T 'FB User_Config_Reference_FB'}" /></CheckBox>
                             <CheckBox IsChecked="{Binding CheckTechDb}"><TextBlock Text="{l:T 'DB CheckTechTemplate_DB y sus SCL'}" /></CheckBox>
+                            <CheckBox IsChecked="{Binding TechScreens}"><TextBlock Text="{l:T 'Pantallas de trazabilidad (XML)'}" /></CheckBox>
                         </StackPanel>
                     </Border>
 

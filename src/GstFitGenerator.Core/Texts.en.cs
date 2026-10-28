@@ -220,5 +220,22 @@ public static partial class L
         ["No se pudo escribir en {0}: {1}"] = "Could not write to {0}: {1}",
         ["Generado"] = "Generated",
         ["Archivos escritos en {0}:\n\n{1}"] = "Files written to {0}:\n\n{1}",
+
+        // Pantallas de techs
+        ["Pantallas de techs"] = "Tech screens",
+        ["Pantallas de trazabilidad del HMI con un faceplate TechLayout por feature: un recuadro por Fixture y una columna por Asset. Cada referencia ocupa pantallas desde su pantalla de inicio; si no cabe, la siguiente se corre. Las reservas solo salen si tienen pantalla de inicio."] =
+            "HMI traceability screens with one TechLayout faceplate per feature: one box per Fixture and one column per Asset. Each reference fills screens from its start screen; if it does not fit, the next one moves along. Spares only appear if they have a start screen.",
+        ["CONTENIDO"] = "CONTENT",
+        ["EMPIEZA EN"] = "STARTS AT",
+        ["NOMBRE CORTO"] = "SHORT NAME",
+        ["TIPO"] = "TYPE",
+        ["No"] = "No",
+        ["Vista previa"] = "Preview",
+        ["Elige la pantalla de inicio de alguna referencia para ver la vista previa."] = "Choose the start screen of a reference to see the preview.",
+        ["Pantallas de trazabilidad (XML)"] = "Traceability screens (XML)",
+        ["Las pantallas de techs no caben:\n{0}"] = "The tech screens do not fit:\n{0}",
+        ["Ref{0}: {1} features sin fixture van al recuadro «{2}»."] = "Ref{0}: {1} features without a fixture go to the box “{2}”.",
+        ["{0}: empieza en la pantalla {1} en vez de en la {2}, porque la {2} ya está ocupada."] = "{0}: starts at screen {1} instead of {2}, because {2} is already taken.",
+        ["{0}: hacen falta pantallas hasta la {1} y solo hay {2}."] = "{0}: screens up to {1} are needed and there are only {2}.",
     };
 }

@@ -104,6 +104,7 @@ public sealed partial class MainViewModel : ObservableObject
         root.Children.Add(references);
         root.Children.Add(new NavNode(NavKind.Auxiliaries));
         root.Children.Add(new NavNode(NavKind.Screens));
+        root.Children.Add(new NavNode(NavKind.TechScreens));
         root.Children.Add(new NavNode(NavKind.Versions));
         root.Children.Add(new NavNode(NavKind.Sizes));
         Tree.Add(root);
@@ -132,6 +133,7 @@ public sealed partial class MainViewModel : ObservableObject
                     NavKind.Reference => (L.T("Referencia {0}", node.Reference), Count(project.FindReference(node.Reference)?.Features.Count ?? 0)),
                     NavKind.Auxiliaries => (L.T("Auxiliares"), Count(project.Auxiliaries.Count)),
                     NavKind.Screens => (L.T("Screen Names"), ""),
+                    NavKind.TechScreens => (L.T("Pantallas de techs"), Count(TechScreens.Plan(project).Pages.Count)),
                     NavKind.Versions => (L.T("Control de versiones"), Count(project.Versions.Count)),
                     _ => (L.T("Tamaños"), ""),
                 };
@@ -162,6 +164,7 @@ public sealed partial class MainViewModel : ObservableObject
             NavKind.Reference => project.FindReference(value.Reference) is { } r ? new ReferenceViewModel(this, r) : null,
             NavKind.Auxiliaries => new AuxiliariesViewModel(Session),
             NavKind.Screens => new ScreensViewModel(Session),
+            NavKind.TechScreens => new TechScreensViewModel(Session),
             NavKind.Versions => new VersionsViewModel(Session),
             _ => new SizesViewModel(this),
         };
