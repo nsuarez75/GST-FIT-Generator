@@ -82,6 +82,26 @@ public class EditingTests
         Assert.Equal("0102001", Layout.Rows(project, reference).First(r => r.Feature.ClientReference == "W2_01").Offset);
     }
 
+    [Fact]
+    public void Anadir_reservas_las_pone_al_final_de_su_tecnologia_sin_mover_nada()
+    {
+        var project = FakeProject.Create();
+        var reference = project.References[0];
+        var antes = Layout.Offsets(project);
+
+        var reserves = Editing.AddReserves(project, reference, 2, 3);
+
+        Assert.Equal(3, reserves.Count);
+        Assert.All(reserves, r => Assert.Equal(2, r.ReserveTechnology));
+        var rows = Layout.Rows(project, reference);
+        Assert.Equal(["0102004", "0102005", "0102006"], reserves.Select(r => rows.Single(x => x.Feature == r).Offset));
+        Assert.All(antes, o => Assert.Equal(o.Value, Layout.Offsets(project)[o.Key]));
+
+        // Una tecnología que aún no tiene features en la referencia: empieza en el pointer 1.
+        var nueva = Editing.AddReserves(project, reference, 5, 2);
+        Assert.Equal("0105001", Layout.Rows(project, reference).Single(x => x.Feature == nueva[0]).Offset);
+    }
+
     [Theory]
     [InlineData(0, "W3 W1 W2_01")]
     [InlineData(1, "W1 W3 W2_01")]

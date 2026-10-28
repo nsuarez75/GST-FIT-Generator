@@ -243,6 +243,46 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     internal Session EditSession => Session;
 
+    // ---------------------------------------------------------------- reservas
+
+    // Máximo de reservas de una vez: el pointer tiene 3 cifras en el offset.
+    public const int MaxReserves = 999;
+
+    // Reservas al final de una tecnología (desde su cabecera) o de cada tecnología de la referencia (menú Más).
+    internal async Task AddReserves(BlockHeaderViewModel? header)
+    {
+        var technologies = header is not null ? [header.Technology] : Items.OfType<BlockHeaderViewModel>().Select(h => h.Technology).ToList();
+        if (technologies.Count == 0)
+        {
+            return;
+        }
+        var answer = header is not null
+            ? await _host.Dialogs.Prompt(L.T("Añadir reservas a {0}", header.Title), [L.T("Cuántas reservas (ahora {0})", header.Detail)], ["1"])
+            : await _host.Dialogs.Prompt(L.T("Añadir reservas"), [L.T("Cuántas reservas en cada una de las {0} tecnologías", technologies.Count)], ["1"]);
+        if (answer is null)
+        {
+            return;
+        }
+        if (!int.TryParse(answer[0].Trim(), out var count) || count < 1 || count > MaxReserves)
+        {
+            await _host.Dialogs.Message(L.T("Añadir reservas"), L.T("Escribe un número de reservas entre 1 y {0}.", MaxReserves));
+            return;
+        }
+        List<Feature> added = [];
+        Session.Change("add-reserves", () =>
+        {
+            foreach (var technology in technologies)
+            {
+                added.AddRange(Editing.AddReserves(Session.Project, Reference, technology, count));
+            }
+        });
+        // Desde la cabecera se ve la última reserva añadida; desde el menú se queda donde estaba.
+        Refresh(header is not null ? added[^1] : null);
+    }
+
+    [RelayCommand]
+    private Task AddReservesToAll() => AddReserves(null);
+
     // ---------------------------------------------------------------- añadir, borrar y mover
 
     [RelayCommand]
@@ -450,6 +490,9 @@ public sealed partial class BlockHeaderViewModel(ReferenceViewModel owner, int t
 
     [RelayCommand]
     private void Toggle() => owner.Toggle(Technology);
+
+    [RelayCommand]
+    private Task AddReserves() => owner.AddReserves(this);
 }
 
 // Opción del desplegable de tipo: un tipo del catálogo o una reserva de una tecnología.

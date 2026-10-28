@@ -58,6 +58,15 @@ public static class Editing
         feature.Fixtures.Clear();
     }
 
+    // Reservas nuevas al final del bloque de una tecnología: no cambia el offset de ninguna feature.
+    public static List<Feature> AddReserves(Project project, Reference reference, int technology, int count)
+    {
+        var reserves = Enumerable.Range(0, count).Select(_ => new Feature { ReserveTechnology = technology }).ToList();
+        var last = reference.Features.FindLastIndex(f => Layout.TechnologyOf(project, f) == technology);
+        reference.Features.InsertRange(last < 0 ? reference.Features.Count : last + 1, reserves);
+        return reserves;
+    }
+
     public static void Delete(Reference reference, Feature feature) => reference.Features.Remove(feature);
 
     // Arrastrar dentro de su tecnología: la deja en la posición indicada del bloque (0 = primera).
