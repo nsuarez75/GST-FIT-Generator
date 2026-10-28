@@ -2,7 +2,7 @@
 
 Aplicación de escritorio para crear dentro de la propia app los datos del FIT de una pieza (proyectos, referencias, features, tipos de feature, tecnologías, locations y pantallas de trazabilidad) y, a partir de ellos, generar lo mismo que GeneradorFIT: el Excel FIT para la plataforma I4 de GESTAMP y el código de PLC (TIA Portal) del estándar SICAR@GST. Sustituye a la plantilla Excel que antes se rellenaba a mano.
 
-> Estado: versión 0.1.3 publicada en [Releases](https://github.com/nsuarez75/GST-FIT-Generator/releases), con ejecutables de Windows y Linux. Pendiente de probar con datos reales y en TIA. Ver `TODO.md`.
+> Estado: versión 0.1.4 publicada en [Releases](https://github.com/nsuarez75/GST-FIT-Generator/releases), con ejecutables de Windows y Linux. Pendiente de probar con datos reales y en TIA. Ver `TODO.md`.
 
 ## Uso
 
