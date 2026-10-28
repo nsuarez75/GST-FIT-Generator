@@ -149,11 +149,13 @@ public static partial class L
         ["Pegar"] = "Paste",
         ["Mostrar u ocultar la ficha"] = "Show or hide the detail panel",
         ["Duplicar referencia"] = "Duplicate reference",
-        ["Agrupadas por tecnología; dentro de cada una, el orden de la lista da el pointer. Arrastra por el asa para reordenar dentro de su tecnología. Doble clic en una fila para ver su ficha."] =
-            "Grouped by technology; within each one, list order gives the pointer. Drag by the handle to reorder within its technology. Double-click a row to see its details.",
+        ["Agrupadas por tecnología; dentro de cada una, el orden de la lista da el pointer. Pulsa una tecnología para contraerla. Arrastra por el asa para reordenar dentro de su tecnología: la línea azul marca dónde caerá. Doble clic en una fila para ver su ficha."] =
+            "Grouped by technology; within each one, list order gives the pointer. Click a technology to collapse it. Drag by the handle to reorder within its technology: the blue line shows where it will land. Double-click a row to see its details.",
         ["Todavía no hay features. Pulsa Añadir, pega filas de un Excel o importa una plantilla."] = "No features yet. Click Add, paste rows from Excel or import a template.",
         ["UTILLAJES"] = "FIXTURES",
         ["Arrastrar para reordenar"] = "Drag to reorder",
+        ["Contraer o expandir la tecnología"] = "Collapse or expand the technology",
+        ["Contraer o expandir todas las tecnologías"] = "Collapse or expand all technologies",
         ["Selecciona una feature para ver su ficha y sus utillajes."] = "Select a feature to see its details and fixtures.",
         ["Pointer"] = "Pointer",
         ["Añadir utillaje"] = "Add fixture",

@@ -50,6 +50,8 @@ public sealed class Icon : Control
         ["map-pin"] = "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z M12 7a3 3 0 1 0 0 6a3 3 0 1 0 0-6z",
         ["arrow-up"] = "M12 19V5 M5 12l7-7 7 7",
         ["arrow-down"] = "M12 5v14 M19 12l-7 7-7-7",
+        ["chevron-down"] = "M6 9l6 6 6-6",
+        ["chevron-right"] = "M9 18l6-6-6-6",
         ["expand"] = "M7 15l5 5 5-5 M7 9l5-5 5 5",
         ["collapse"] = "M7 20l5-5 5 5 M7 4l5 5 5-5",
         ["copy"] = "M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2",

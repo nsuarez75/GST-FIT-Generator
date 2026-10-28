@@ -43,6 +43,9 @@
                 <Button Command="{Binding ToggleFormCommand}" ToolTip.Tip="{l:T 'Mostrar u ocultar la ficha'}">
                     <c:Icon Kind="panel-right" />
                 </Button>
+                <Button Command="{Binding ToggleAllCommand}" ToolTip.Tip="{l:T 'Contraer o expandir todas las tecnologías'}">
+                    <c:Icon Kind="collapse" />
+                </Button>
                 <Button ToolTip.Tip="{l:T 'Más'}">
                     <c:Icon Kind="more" StrokeWidth="3" />
                     <Button.Flyout>
@@ -55,7 +58,7 @@
             </WrapPanel>
         </Grid>
         <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
-                   Text="{l:T 'Agrupadas por tecnología; dentro de cada una, el orden de la lista da el pointer. Arrastra por el asa para reordenar dentro de su tecnología. Doble clic en una fila para ver su ficha.'}" />
+                   Text="{l:T 'Agrupadas por tecnología; dentro de cada una, el orden de la lista da el pointer. Pulsa una tecnología para contraerla. Arrastra por el asa para reordenar dentro de su tecnología: la línea azul marca dónde caerá. Doble clic en una fila para ver su ficha.'}" />
         <TextBlock DockPanel.Dock="Top" Classes="muted" IsVisible="{Binding IsEmpty}" Margin="0,0,0,14"
                    Text="{l:T 'Todavía no hay features. Pulsa Añadir, pega filas de un Excel o importa una plantilla.'}" />
 
@@ -76,19 +79,34 @@
                             <TextBlock Grid.Column="8" Classes="columnHeader" Text="{l:T 'UTILLAJES'}" />
                         </Grid>
                     </Border>
+                    <Panel>
                     <ListBox x:Name="Rows" Classes="table" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DoubleTapped="OnRowDoubleTapped">
+                        <ListBox.Styles>
+                            <!-- La fila que se está arrastrando se atenúa -->
+                            <Style Selector="ListBoxItem.dragging">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Style>
+                        </ListBox.Styles>
                         <ListBox.DataTemplates>
                             <DataTemplate DataType="vm:BlockHeaderViewModel">
-                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,2">
-                                    <c:Icon Kind="tag" Width="14" Height="14" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Detail}" Classes="label" FontSize="11.5" VerticalAlignment="Center" />
-                                </StackPanel>
+                                <Button Classes="ghost" Command="{Binding ToggleCommand}" Padding="0,8,8,2" HorizontalAlignment="Left"
+                                        ToolTip.Tip="{l:T 'Contraer o expandir la tecnología'}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Panel Width="14" Height="14" VerticalAlignment="Center">
+                                            <c:Icon Kind="chevron-down" IsVisible="{Binding IsExpanded}" Foreground="{DynamicResource App.AccentText}" />
+                                            <c:Icon Kind="chevron-right" IsVisible="{Binding !IsExpanded}" Foreground="{DynamicResource App.AccentText}" />
+                                        </Panel>
+                                        <c:Icon Kind="tag" Width="14" Height="14" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource App.AccentText}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Detail}" Classes="label" FontSize="11.5" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
                             </DataTemplate>
                             <DataTemplate DataType="vm:FeatureRowViewModel">
                                 <Grid ColumnDefinitions="22,74,36,1*,1.8*,140,86,44,1.4*" ColumnSpacing="8">
                                     <Border Background="Transparent" Cursor="SizeNorthSouth" ToolTip.Tip="{l:T 'Arrastrar para reordenar'}"
-                                            PointerPressed="OnGripPressed" PointerReleased="OnGripReleased">
+                                            PointerPressed="OnGripPressed" PointerMoved="OnGripMoved" PointerReleased="OnGripReleased"
+                                            PointerCaptureLost="OnGripCaptureLost">
                                         <c:Icon Kind="grip" Width="14" Height="14" Foreground="{DynamicResource App.TextMuted}" StrokeWidth="3" />
                                     </Border>
                                     <TextBlock Grid.Column="1" Classes="mono" Text="{Binding Offset}" VerticalAlignment="Center" />
@@ -115,6 +133,14 @@
                             </DataTemplate>
                         </ListBox.DataTemplates>
                     </ListBox>
+                    <!-- Al arrastrar: línea azul donde caerá la fila y su offset nuevo -->
+                    <Canvas x:Name="DropLayer" IsHitTestVisible="False" ClipToBounds="True">
+                        <Border x:Name="DropLine" IsVisible="False" Height="3" CornerRadius="1.5" Background="{DynamicResource App.Accent}" />
+                        <Border x:Name="DropLabel" IsVisible="False" Classes="pill accent">
+                            <TextBlock x:Name="DropText" Classes="mono" />
+                        </Border>
+                    </Canvas>
+                    </Panel>
                 </DockPanel>
                 </ScrollViewer>
             </Border>
