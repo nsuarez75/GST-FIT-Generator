@@ -44,9 +44,9 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     public bool HasSelection => Selected is not null;
 
-    // Ficha de la derecha: visible al hacer doble clic en una fila o con el botón.
+    // Ficha de la derecha: cerrada al abrir la referencia; se abre al hacer doble clic en una fila o con el botón.
     [ObservableProperty]
-    public partial bool ShowForm { get; set; } = true;
+    public partial bool ShowForm { get; set; }
 
     // Lo que selecciona la lista; las cabeceras de bloque no se pueden seleccionar.
     public object? SelectedItem

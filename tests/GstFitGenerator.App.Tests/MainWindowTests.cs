@@ -636,6 +636,19 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task La_ficha_sale_cerrada_al_abrir_una_referencia()
+    {
+        var (_, main, _) = await Open();
+
+        var reference = ShowReference(main);
+        Assert.False(reference.ShowForm);
+
+        reference.ToggleFormCommand.Execute(null);
+        Assert.True(reference.ShowForm);
+        Assert.False(ShowReference(main, 2).ShowForm);
+    }
+
+    [AvaloniaFact]
     public async Task Un_solo_menu_de_pantallas_con_screen_names_y_techs()
     {
         var (_, main, _) = await Open();
