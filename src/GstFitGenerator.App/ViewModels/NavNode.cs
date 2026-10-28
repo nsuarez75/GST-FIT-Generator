@@ -11,6 +11,8 @@ public enum NavKind
     References,
     Reference,
     Auxiliaries,
+    // Grupo «Pantallas»: Screen Names y Pantallas de techs.
+    ScreenGroup,
     Screens,
     TechScreens,
     Versions,
@@ -42,7 +44,8 @@ public sealed partial class NavNode(NavKind kind, int reference = 0) : Observabl
         NavKind.References => "layers",
         NavKind.Reference => "list",
         NavKind.Auxiliaries => "users",
-        NavKind.Screens => "monitor",
+        NavKind.ScreenGroup => "monitor",
+        NavKind.Screens => "list",
         NavKind.TechScreens => "layout-grid",
         NavKind.Versions => "history",
         _ => "ruler",

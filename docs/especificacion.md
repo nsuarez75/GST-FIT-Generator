@@ -15,7 +15,7 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 
 - Sigue el estándar de interfaz de las apps nuevas, tomado de GST-LoS-Generator: mismo estilo, barra superior con iconos, tema claro, oscuro o según el sistema, idioma castellano o inglés, aviso de versión nueva, deshacer y rehacer, y aviso al cerrar con cambios sin guardar.
 - Ejecutables para Windows y Linux.
-- Panel izquierdo con el árbol del proyecto: datos del proyecto, tecnologías, locations, referencias, auxiliares, Screen Names, pantallas de techs, control de versiones y tamaños.
+- Panel izquierdo con el árbol del proyecto: datos del proyecto, tecnologías, locations, referencias, auxiliares, pantallas (un solo menú con Screen Names y Pantallas de techs), control de versiones y tamaños.
 
 ## Archivos
 
