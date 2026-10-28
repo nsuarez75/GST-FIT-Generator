@@ -6,7 +6,7 @@ Aplicación de escritorio para crear dentro de la propia app los datos del FIT d
 
 ## Uso
 
-1. **Proyecto**: nombre, revisión, planta y línea. O bien **Importar plantilla** para crearlo a partir de una plantilla Excel de las de antes.
+1. **Proyecto**: nombre, revisión, planta y línea. O bien **Importar plantilla** para crearlo a partir de una plantilla Excel de las de antes. La plantilla solo guarda el número de cada location, así que se crean como «Location N»: renómbralas en **Locations**.
 2. **Catálogo** (común a todos los proyectos): los tipos de feature. En **Tecnologías**, el nombre de cada tecnología (0 a 10) y la tecnología de cada tipo.
 3. **Locations**, **Auxiliares**, **Screen Names** y **Control de versiones**. En **Pantallas de techs**, dónde empieza cada referencia en las pantallas de trazabilidad del HMI, los nombres cortos de Fixtures y Assets y una vista previa de cada pantalla.
 4. **Referencias**: una tabla por referencia, agrupada por tecnología, con el pointer y el offset de cada feature. Se reordena arrastrando por el asa (o con Alt+↑/↓) dentro de su tecnología. «Eliminar» propone convertir la feature en reserva para no mover nada. Se pueden pegar filas de un Excel y duplicar la referencia.
