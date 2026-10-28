@@ -17,15 +17,52 @@ public partial class ReferenceView : UserControl
     private Control? _draggedContainer;
     private Point _dragPoint;
     private readonly DispatcherTimer _autoScroll;
+    // Mientras se recupera el desplazamiento de un editor nuevo, no se apunta el que deja la lista al cargarse.
+    private bool _restoringScroll;
 
     public ReferenceView()
     {
         InitializeComponent();
         _autoScroll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
         _autoScroll.Tick += (_, _) => AutoScroll();
+        Rows.TemplateApplied += (_, e) =>
+        {
+            if (e.NameScope.Find<ScrollViewer>("PART_ScrollViewer") is { } scroll)
+            {
+                scroll.ScrollChanged += (_, _) => OnRowsScrolled(scroll);
+            }
+        };
     }
 
     private ReferenceViewModel? ViewModel => DataContext as ReferenceViewModel;
+
+    private void OnRowsScrolled(ScrollViewer scroll)
+    {
+        if (!_restoringScroll && ViewModel is { } vm)
+        {
+            vm.ScrollY = scroll.Offset.Y;
+        }
+    }
+
+    // Editor nuevo (por ejemplo al deshacer): la lista vuelve al desplazamiento que tenía, una vez montadas las filas.
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        EndDrag();
+        if (ViewModel is not { ScrollY: > 0 } vm)
+        {
+            return;
+        }
+        _restoringScroll = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (DataContext == vm && Rows.FindDescendantOfType<ScrollViewer>() is { } scroll)
+            {
+                scroll.Offset = scroll.Offset.WithY(vm.ScrollY);
+            }
+            _restoringScroll = false;
+        }, DispatcherPriority.Background);
+    }
 
     private void OnGripPressed(object? sender, PointerPressedEventArgs e)
     {

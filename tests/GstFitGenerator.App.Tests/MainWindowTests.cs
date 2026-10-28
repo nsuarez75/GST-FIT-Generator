@@ -24,7 +24,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     // Ventana con el proyecto de prueba importado desde una plantilla (con una reserva y dos referencias).
-    private async Task<(MainWindow Window, MainViewModel Main, FakeDialogs Dialogs)> Open(double width = 1400)
+    private async Task<(MainWindow Window, MainViewModel Main, FakeDialogs Dialogs)> Open(double width = 1400, double height = 860)
     {
         var session = new Session(Path.Combine(_dir, "catalogo.fitcat"));
         var dialogs = new FakeDialogs();
@@ -42,7 +42,7 @@ public sealed class MainWindowTests : IDisposable
         dialogs.Files.Enqueue(template);
         await main.ImportTemplateCommand.ExecuteAsync(null);
 
-        var window = new MainWindow { Width = width, Height = 860 };
+        var window = new MainWindow { Width = width, Height = height };
         window.Attach(main);
         main.Dialogs = dialogs;
         window.Show();
@@ -251,6 +251,39 @@ public sealed class MainWindowTests : IDisposable
         await reference.DeleteCommand.ExecuteAsync(null);
         Assert.Same(reference, main.Editor);
         Assert.True(reference.Selected!.IsReserve);
+    }
+
+    [AvaloniaFact]
+    public async Task Deshacer_se_queda_en_la_misma_posicion()
+    {
+        var (window, main, _) = await Open(height: 520);
+        var reference = ShowReference(main);
+        reference.Selected = Row(reference, "W3");
+        for (var i = 0; i < 20; i++)
+        {
+            reference.AddCommand.Execute(null);
+        }
+        reference.Selected = Row(reference, "MARCA");
+        reference.ShowForm = false;
+        Dispatcher.UIThread.RunJobs();
+        var scroll = window.GetVisualDescendants().OfType<ReferenceView>().Single().FindControl<ListBox>("Rows")!
+            .GetVisualDescendants().OfType<ScrollViewer>().First();
+        scroll.Offset = scroll.Offset.WithY(300);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(300, reference.ScrollY);
+
+        // Deshacer el último añadido: la feature seleccionada sigue siendo MARCA y la lista no vuelve arriba.
+        main.UndoCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        var undone = Assert.IsType<ReferenceViewModel>(main.Editor);
+        Assert.NotSame(reference, undone);
+        Assert.Equal("MARCA", undone.Selected!.Feature.ClientReference);
+        Assert.False(undone.ShowForm);
+        scroll = window.GetVisualDescendants().OfType<ReferenceView>().Single().FindControl<ListBox>("Rows")!
+            .GetVisualDescendants().OfType<ScrollViewer>().First();
+        Assert.Equal(300, scroll.Offset.Y);
+        Assert.Equal(300, undone.ScrollY);
     }
 
     [AvaloniaFact]

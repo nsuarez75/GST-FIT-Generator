@@ -158,6 +158,27 @@ public sealed partial class ReferenceViewModel : EditableViewModel
         ShowForm = true;
     }
 
+    // Desplazamiento vertical de la lista. Lo apunta la vista para recuperarlo si el editor se rehace.
+    public double ScrollY { get; set; }
+
+    // Deshacer y rehacer cambian el proyecto entero y rehacen el editor: el nuevo se queda donde estaba el anterior
+    // de la misma referencia (la feature en la misma tecnología y pointer, o la última de esa tecnología si ya no
+    // llega; el desplazamiento y la ficha).
+    public void TakeViewFrom(ReferenceViewModel previous)
+    {
+        ShowForm = previous.ShowForm;
+        ScrollY = previous.ScrollY;
+        if (previous.Selected is not { } selected)
+        {
+            return;
+        }
+        var block = Layout.Rows(Session.Project, Reference).Where(r => r.Technology == selected.Row.Technology).ToList();
+        if (block.Count > 0)
+        {
+            Refresh(block[Math.Min(selected.Row.Pointer, block.Count) - 1].Feature);
+        }
+    }
+
     // ---------------------------------------------------------------- contraer tecnologías
 
     public bool AllCollapsed => Items.OfType<BlockHeaderViewModel>().All(h => !h.IsExpanded);
