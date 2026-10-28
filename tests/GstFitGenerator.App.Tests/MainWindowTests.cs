@@ -1,5 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using GstFitGenerator.App.ViewModels;
@@ -213,6 +216,111 @@ public sealed class MainWindowTests : IDisposable
         // A otra tecnología no se puede soltar.
         reference.Drop(Row(reference, "W3"), Row(reference, "MARCA"));
         Assert.Equal("0102002", Row(reference, "W3").Offset);
+    }
+
+    [AvaloniaFact]
+    public async Task Anadir_y_quitar_no_rehacen_la_lista()
+    {
+        var (_, main, dialogs) = await Open();
+        var reference = ShowReference(main);
+        var w3 = Row(reference, "W3");
+        var marca = Row(reference, "MARCA");
+
+        reference.Selected = Row(reference, "W1");
+        reference.AddCommand.Execute(null);
+        var added = Assert.IsType<FeatureRowViewModel>(reference.Selected);
+
+        // Mismo editor y mismas filas: la lista no se vacía, así no vuelve arriba.
+        Assert.Same(reference, main.Editor);
+        Assert.Same(w3, Row(reference, "W3"));
+        Assert.Same(marca, Row(reference, "MARCA"));
+        Assert.Equal("0102005", w3.Offset);
+        Assert.Equal("7", main.FindNode(NavKind.Reference, 1)!.Detail);
+
+        // Al borrar del todo, queda seleccionada la siguiente de su tecnología.
+        dialogs.DeleteAnswer = DeleteChoice.Delete;
+        await reference.DeleteCommand.ExecuteAsync(null);
+        Assert.Same(reference, main.Editor);
+        Assert.Same(w3, Row(reference, "W3"));
+        Assert.Equal("W2_01", reference.Selected!.Feature.ClientReference);
+        Assert.Equal("0102004", w3.Offset);
+        Assert.DoesNotContain(added, reference.Items);
+
+        // La última de su tecnología: queda la anterior.
+        reference.Selected = w3;
+        await reference.DeleteCommand.ExecuteAsync(null);
+        Assert.Same(reference, main.Editor);
+        Assert.True(reference.Selected!.IsReserve);
+    }
+
+    [AvaloniaFact]
+    public async Task Contraer_una_tecnologia_oculta_sus_filas_y_se_recuerda()
+    {
+        var (_, main, _) = await Open();
+        var reference = ShowReference(main);
+        var header = reference.Items.OfType<BlockHeaderViewModel>().First(h => h.Technology == 2);
+        var count = reference.Items.Count;
+
+        header.ToggleCommand.Execute(null);
+        Assert.False(header.IsExpanded);
+        Assert.Equal(count - 4, reference.Items.Count);
+        Assert.DoesNotContain(reference.Items.OfType<FeatureRowViewModel>(), r => r.Row.Technology == 2);
+
+        // Sigue contraída al volver a la referencia.
+        main.SelectedNode = main.FindNode(NavKind.Project);
+        reference = ShowReference(main);
+        Assert.False(reference.Items.OfType<BlockHeaderViewModel>().First(h => h.Technology == 2).IsExpanded);
+
+        // Ir a una feature de esa tecnología (desde un aviso) la expande.
+        reference.Select(main.Session.Project.References[0].Features.First(f => f.ClientReference == "W3"));
+        Assert.Equal("W3", reference.Selected!.Feature.ClientReference);
+        Assert.True(reference.Items.OfType<BlockHeaderViewModel>().First(h => h.Technology == 2).IsExpanded);
+
+        reference.ToggleAllCommand.Execute(null);
+        Assert.True(reference.AllCollapsed);
+        Assert.Empty(reference.Items.OfType<FeatureRowViewModel>());
+        reference.ToggleAllCommand.Execute(null);
+        Assert.Equal(count, reference.Items.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task Al_arrastrar_se_ve_donde_caera_la_fila()
+    {
+        var (window, main, _) = await Open();
+        var reference = ShowReference(main);
+        Dispatcher.UIThread.RunJobs();
+        var view = window.GetVisualDescendants().OfType<ReferenceView>().Single();
+        var rows = view.FindControl<ListBox>("Rows")!;
+        Point Centre(Control control) => control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
+        Control Grip(string client) => rows.ContainerFromItem(Row(reference, client))!.GetVisualDescendants().OfType<Border>()
+            .First(b => b.Cursor is not null);
+
+        var from = Centre(Grip("W3"));
+        var to = Centre(rows.ContainerFromItem(Row(reference, "W1"))!);
+        window.MouseDown(from, MouseButton.Left);
+        window.MouseMove(new Point(from.X, to.Y));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(view.FindControl<Border>("DropLine")!.IsVisible);
+        Assert.Equal("0102004 → 0102001", view.FindControl<TextBlock>("DropText")!.Text);
+        Assert.Contains("dragging", rows.ContainerFromItem(Row(reference, "W3"))!.Classes);
+        Shot(window, "13-arrastrar");
+
+        window.MouseUp(new Point(from.X, to.Y), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(view.FindControl<Border>("DropLine")!.IsVisible);
+        Assert.Equal("0102001", Row(reference, "W3").Offset);
+    }
+
+    [AvaloniaFact]
+    public async Task Solo_se_puede_soltar_en_la_misma_tecnologia()
+    {
+        var (_, main, _) = await Open();
+        var reference = ShowReference(main);
+
+        Assert.True(ReferenceViewModel.CanDrop(Row(reference, "W3"), Row(reference, "W1")));
+        Assert.False(ReferenceViewModel.CanDrop(Row(reference, "W3"), Row(reference, "W3")));
+        Assert.False(ReferenceViewModel.CanDrop(Row(reference, "W3"), Row(reference, "MARCA")));
     }
 
     [AvaloniaFact]

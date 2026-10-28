@@ -79,6 +79,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---------------------------------------------------------------- árbol y editor
 
+    // Tecnologías contraídas en la vista de cada referencia (por número de referencia). Solo mientras la app está abierta.
+    public Dictionary<int, HashSet<int>> CollapsedTechnologies { get; } = [];
+
     public void Rebuild()
     {
         var kind = SelectedNode?.Kind ?? NavKind.Project;

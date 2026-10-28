@@ -10,6 +10,8 @@ namespace GstFitGenerator.App.ViewModels;
 public sealed partial class ReferenceViewModel : EditableViewModel
 {
     private readonly MainViewModel _host;
+    // Tecnologías contraídas de esta referencia. Viven en MainViewModel para no perderlas al cambiar de vista o deshacer.
+    private readonly HashSet<int> _collapsed;
 
     public Reference Reference { get; }
     // Cabeceras de bloque (BlockHeaderViewModel) y filas (FeatureRowViewModel), en orden.
@@ -21,6 +23,12 @@ public sealed partial class ReferenceViewModel : EditableViewModel
     {
         _host = host;
         Reference = reference;
+        if (!host.CollapsedTechnologies.TryGetValue(reference.Number, out var collapsed))
+        {
+            collapsed = [];
+            host.CollapsedTechnologies[reference.Number] = collapsed;
+        }
+        _collapsed = collapsed;
         TypeOptions = TypeOption.All(Session.Project, Session.Catalog);
         LocationOptions = LocationOption.All(Session.Project);
         Refresh();
@@ -55,34 +63,127 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     partial void OnSelectedChanged(FeatureRowViewModel? value) => OnPropertyChanged(nameof(SelectedItem));
 
-    // Vuelve a montar la tabla (después de añadir, mover, borrar o cambiar de tecnología) sin perder la selección.
+    // Pone la tabla al día (después de añadir, mover, borrar o cambiar de tecnología) sin vaciarla: se reutilizan las
+    // filas que siguen ahí, así la lista no vuelve arriba y se conserva la selección. Si se pide seleccionar una
+    // feature de una tecnología contraída, se expande para que se vea.
     public void Refresh(Feature? select = null)
     {
-        select ??= Selected?.Feature;
-        Items.Clear();
-        FeatureRowViewModel? selected = null;
         var rows = Layout.Rows(Session.Project, Reference);
+        if (select is not null && rows.FirstOrDefault(r => r.Feature == select) is { } shown)
+        {
+            _collapsed.Remove(shown.Technology);
+        }
+        select ??= Selected?.Feature;
+        var headers = Items.OfType<BlockHeaderViewModel>().ToDictionary(h => h.Technology);
+        var existing = Items.OfType<FeatureRowViewModel>().ToDictionary(r => r.Feature);
+        var items = new List<object>();
+        FeatureRowViewModel? selected = null;
         foreach (var block in rows.GroupBy(r => r.Technology))
         {
-            Items.Add(new BlockHeaderViewModel(block.Key, Session.Project.TechnologyName(block.Key), block.Count(), block.Count(r => r.Feature.IsReserve)));
+            if (!headers.TryGetValue(block.Key, out var header))
+            {
+                header = new BlockHeaderViewModel(this, block.Key);
+            }
+            header.Update(Session.Project.TechnologyName(block.Key), block.Count(), block.Count(r => r.Feature.IsReserve), !_collapsed.Contains(block.Key));
+            items.Add(header);
+            if (!header.IsExpanded)
+            {
+                continue;
+            }
             foreach (var row in block)
             {
-                var vm = new FeatureRowViewModel(this, row);
-                Items.Add(vm);
+                if (existing.TryGetValue(row.Feature, out var vm))
+                {
+                    vm.Update(row);
+                }
+                else
+                {
+                    vm = new FeatureRowViewModel(this, row);
+                }
+                items.Add(vm);
                 if (row.Feature == select)
                 {
                     selected = vm;
                 }
             }
         }
+        Sync(items);
         Selected = selected;
+        // Al mover filas la lista puede soltar la selección aunque sea la misma: se le vuelve a indicar.
+        OnPropertyChanged(nameof(SelectedItem));
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(AllCollapsed));
+    }
+
+    // Deja Items igual que la lista nueva quitando, moviendo e insertando lo justo.
+    private void Sync(List<object> items)
+    {
+        var keep = new HashSet<object>(items, ReferenceEqualityComparer.Instance);
+        for (var i = Items.Count - 1; i >= 0; i--)
+        {
+            if (!keep.Contains(Items[i]))
+            {
+                Items.RemoveAt(i);
+            }
+        }
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (i < Items.Count && ReferenceEquals(Items[i], items[i]))
+            {
+                continue;
+            }
+            var from = -1;
+            for (var j = i + 1; j < Items.Count; j++)
+            {
+                if (ReferenceEquals(Items[j], items[i]))
+                {
+                    from = j;
+                    break;
+                }
+            }
+            if (from >= 0)
+            {
+                Items.Move(from, i);
+            }
+            else
+            {
+                Items.Insert(i, items[i]);
+            }
+        }
     }
 
     public void Select(Feature feature)
     {
-        Selected = Items.OfType<FeatureRowViewModel>().FirstOrDefault(r => r.Feature == feature);
+        Refresh(feature);
         ShowForm = true;
+    }
+
+    // ---------------------------------------------------------------- contraer tecnologías
+
+    public bool AllCollapsed => Items.OfType<BlockHeaderViewModel>().All(h => !h.IsExpanded);
+
+    public void Toggle(int technology)
+    {
+        if (!_collapsed.Remove(technology))
+        {
+            _collapsed.Add(technology);
+        }
+        Refresh();
+    }
+
+    // Contrae todas las tecnologías o, si ya lo están, las expande todas.
+    [RelayCommand]
+    private void ToggleAll()
+    {
+        if (AllCollapsed)
+        {
+            _collapsed.Clear();
+        }
+        else
+        {
+            _collapsed.UnionWith(Items.OfType<BlockHeaderViewModel>().Select(h => h.Technology));
+        }
+        Refresh();
     }
 
     internal Session EditSession => Session;
@@ -95,7 +196,6 @@ public sealed partial class ReferenceViewModel : EditableViewModel
         Feature? feature = null;
         Session.Change("add-feature", () => feature = Editing.AddAfter(Reference, Selected?.Feature));
         Refresh(feature);
-        _host.Rebuild();
     }
 
     [RelayCommand]
@@ -106,6 +206,8 @@ public sealed partial class ReferenceViewModel : EditableViewModel
             return;
         }
         var feature = row.Feature;
+        // Al borrarla del todo queda seleccionada la siguiente de su tecnología (o la anterior si era la última).
+        var neighbour = NeighbourInBlock(feature);
         if (feature.IsReserve)
         {
             var following = Editing.FollowingInBlock(Session.Project, Reference, feature);
@@ -115,7 +217,7 @@ public sealed partial class ReferenceViewModel : EditableViewModel
                 return;
             }
             Session.Change("delete-feature", () => Editing.Delete(Reference, feature));
-            Refresh();
+            Refresh(neighbour);
             return;
         }
         var count = Editing.FollowingInBlock(Session.Project, Reference, feature);
@@ -129,9 +231,18 @@ public sealed partial class ReferenceViewModel : EditableViewModel
                 break;
             case DeleteChoice.Delete:
                 Session.Change("delete-feature", () => Editing.Delete(Reference, feature));
-                Refresh();
+                Refresh(neighbour);
                 break;
         }
+    }
+
+    private Feature? NeighbourInBlock(Feature feature)
+    {
+        var rows = Layout.Rows(Session.Project, Reference);
+        var technology = rows.First(r => r.Feature == feature).Technology;
+        var block = rows.Where(r => r.Technology == technology).Select(r => r.Feature).ToList();
+        var index = block.IndexOf(feature);
+        return index + 1 < block.Count ? block[index + 1] : index > 0 ? block[index - 1] : null;
     }
 
     [RelayCommand]
@@ -152,12 +263,14 @@ public sealed partial class ReferenceViewModel : EditableViewModel
     // Arrastrar una fila sobre otra de la misma tecnología: ocupa su sitio.
     public void Drop(FeatureRowViewModel dragged, FeatureRowViewModel target)
     {
-        if (dragged == target || dragged.Row.Technology != target.Row.Technology)
+        if (CanDrop(dragged, target))
         {
-            return;
+            Move(dragged.Feature, target.Row.Pointer - 1);
         }
-        Move(dragged.Feature, target.Row.Pointer - 1);
     }
+
+    public static bool CanDrop(FeatureRowViewModel dragged, FeatureRowViewModel target) =>
+        dragged != target && dragged.Row.Technology == target.Row.Technology;
 
     private void Move(Feature feature, int position)
     {
@@ -211,7 +324,6 @@ public sealed partial class ReferenceViewModel : EditableViewModel
             Reference.Features.InsertRange(index, features);
         });
         Refresh(features[^1]);
-        _host.Rebuild();
     }
 
     [RelayCommand]
@@ -260,11 +372,29 @@ public sealed partial class ReferenceViewModel : EditableViewModel
     private void ToggleForm() => ShowForm = !ShowForm;
 }
 
-// Cabecera de un bloque: la tecnología y cuántas features y reservas tiene.
-public sealed record BlockHeaderViewModel(int Technology, string Name, int Count, int Reserves)
+// Cabecera de un bloque: la tecnología y cuántas features y reservas tiene. Se pulsa para contraerla o expandirla.
+public sealed partial class BlockHeaderViewModel(ReferenceViewModel owner, int technology) : ObservableObject
 {
-    public string Title => $"{Technology:00} · {Name}";
-    public string Detail => Reserves > 0 ? L.T("{0} posiciones · {1} reservas", Count, Reserves) : L.T("{0} posiciones", Count);
+    public int Technology { get; } = technology;
+
+    [ObservableProperty]
+    public partial string Title { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial string Detail { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial bool IsExpanded { get; private set; } = true;
+
+    public void Update(string name, int count, int reserves, bool expanded)
+    {
+        Title = $"{Technology:00} · {name}";
+        Detail = reserves > 0 ? L.T("{0} posiciones · {1} reservas", count, reserves) : L.T("{0} posiciones", count);
+        IsExpanded = expanded;
+    }
+
+    [RelayCommand]
+    private void Toggle() => owner.Toggle(Technology);
 }
 
 // Opción del desplegable de tipo: un tipo del catálogo o una reserva de una tecnología.
@@ -299,8 +429,18 @@ public sealed class FeatureRowViewModel : EditableViewModel
         Row = row;
     }
 
-    public LayoutRow Row { get; }
+    public LayoutRow Row { get; private set; }
     public Feature Feature => Row.Feature;
+
+    // La fila sigue en la tabla pero su posición ha cambiado: se avisa a la vista de todo (offset, pointer...).
+    public void Update(LayoutRow row)
+    {
+        if (row != Row)
+        {
+            Row = row;
+            OnPropertyChanged(string.Empty);
+        }
+    }
     public IReadOnlyList<TypeOption> TypeOptions => _owner.TypeOptions;
     public IReadOnlyList<LocationOption> LocationOptions => _owner.LocationOptions;
     public bool IsFeature => !IsReserve;
