@@ -93,7 +93,7 @@ public class TechScreenTests
         var box = TechScreens.Plan(project).Pages[0].Boxes.Single(b => b.Title == "5000FIX01");
 
         Assert.Equal(2, box.Rows.Select(r => r.Left).Distinct().Count());
-        Assert.True(box.Rows.Max(r => r.Top) + TechScreens.FaceplateHeight <= TechScreens.AreaBottom);
+        Assert.True(box.Rows.Max(r => r.Top) + new TechScreenStyle().FaceplateHeight <= new TechScreenStyle().AreaBottom);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public class TechScreenTests
 
         var style = TechScreens.Plan(project).Pages[0].Style;
 
-        Assert.Equal((TechScreens.FaceplateHeight + 1, TechScreenStyle.MaxFontSize), (style.RowHeight, style.LabelFontSize));
+        Assert.Equal((new TechScreenStyle().FaceplateHeight + 1, TechScreenStyle.MaxFontSize), (style.RowHeight, style.LabelFontSize));
     }
 
     [Fact]

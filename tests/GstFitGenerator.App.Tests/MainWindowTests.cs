@@ -636,6 +636,35 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Pantallas_de_techs_mover_recuadros_y_deshacer()
+    {
+        var (window, main, _) = await Open();
+        main.SelectedNode = main.FindNode(NavKind.TechScreens);
+        var screens = Assert.IsType<TechScreensViewModel>(main.Editor);
+        screens.Starts[0].SelectedIndex = 7;
+        Dispatcher.UIThread.RunJobs();
+
+        var box = screens.SelectedPage!.Page.Boxes.Single(b => b.Title == "4000FIX01");
+        screens.OnBoxClicked(box);
+        Assert.True(screens.HasSelectedBox);
+        Assert.Equal(["07", "Pantalla nueva"], screens.BoxScreenOptions);
+
+        screens.OnBoxDragged(box, 1001, 501);
+        Assert.Equal((1000m, 504m), (screens.BoxLeft, screens.BoxTop));
+        Shot(window, "14-mover-recuadro");
+
+        // A una pantalla nueva: la vista previa se va con él.
+        screens.BoxScreenIndex = 1;
+        Assert.Equal(8, screens.SelectedPage!.Page.Number);
+        Assert.Equal("4000FIX01", screens.SelectedBoxTitle);
+
+        main.UndoCommand.Execute(null);
+        var undone = Assert.IsType<TechScreensViewModel>(main.Editor);
+        Assert.Equal([7], undone.Pages.Select(p => p.Page.Number));
+        Assert.Equal(1000, undone.Pages[0].Page.Boxes.Single(b => b.Title == "4000FIX01").Left);
+    }
+
+    [AvaloniaFact]
     public async Task La_ficha_sale_cerrada_al_abrir_una_referencia()
     {
         var (_, main, _) = await Open();

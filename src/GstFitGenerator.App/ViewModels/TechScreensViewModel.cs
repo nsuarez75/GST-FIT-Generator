@@ -69,7 +69,7 @@ public sealed partial class TechScreensViewModel : EditableViewModel
 
     public int MinFontSize => TechScreenStyle.MinFontSize;
     public int MaxFontSize => TechScreenStyle.MaxFontSize;
-    public int MinRowHeight => TechScreens.FaceplateHeight + 1;
+    public int MinRowHeight => TechScreens.Clamp(Style).FaceplateHeight + 1;
     public int MaxRowHeight => TechScreenStyle.MaxRowHeight;
     public int MaxBoxGap => TechScreenStyle.MaxBoxGap;
 
@@ -97,6 +97,48 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         set => EditStyle(Style.BoxGap, value, (s, v) => s.BoxGap = v);
     }
 
+    public int MaxMargin => TechScreenStyle.MaxMargin;
+    public int MinFaceplateWidth => TechScreenStyle.MinFaceplateWidth;
+    public int MaxFaceplateWidth => TechScreenStyle.MaxFaceplateWidth;
+
+    public decimal MarginLeft
+    {
+        get => Style.MarginLeft;
+        set => EditStyle(Style.MarginLeft, value, (s, v) => s.MarginLeft = v);
+    }
+
+    public decimal MarginTop
+    {
+        get => Style.MarginTop;
+        set => EditStyle(Style.MarginTop, value, (s, v) => s.MarginTop = v);
+    }
+
+    public decimal MarginRight
+    {
+        get => Style.MarginRight;
+        set => EditStyle(Style.MarginRight, value, (s, v) => s.MarginRight = v);
+    }
+
+    public decimal MarginBottom
+    {
+        get => Style.MarginBottom;
+        set => EditStyle(Style.MarginBottom, value, (s, v) => s.MarginBottom = v);
+    }
+
+    // Ancho del faceplate; el alto sale de la proporción del TechLayout.
+    public decimal FaceplateWidth
+    {
+        get => Style.FaceplateWidth;
+        set
+        {
+            EditStyle(Style.FaceplateWidth, value, (s, v) => s.FaceplateWidth = v);
+            OnPropertyChanged(nameof(FaceplateSize));
+            OnPropertyChanged(nameof(MinRowHeight));
+        }
+    }
+
+    public string FaceplateSize => $"{TechScreens.Clamp(Style).FaceplateWidth} × {TechScreens.Clamp(Style).FaceplateHeight}";
+
     private void EditStyle(int current, decimal value, Action<TechScreenStyle, int> set, [System.Runtime.CompilerServices.CallerMemberName] string? property = null)
     {
         if (Edit(current, (int)value, v => set(Style, v), property))
@@ -113,6 +155,13 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         OnPropertyChanged(nameof(LabelFontSize));
         OnPropertyChanged(nameof(RowHeight));
         OnPropertyChanged(nameof(BoxGap));
+        OnPropertyChanged(nameof(MarginLeft));
+        OnPropertyChanged(nameof(MarginTop));
+        OnPropertyChanged(nameof(MarginRight));
+        OnPropertyChanged(nameof(MarginBottom));
+        OnPropertyChanged(nameof(FaceplateWidth));
+        OnPropertyChanged(nameof(FaceplateSize));
+        OnPropertyChanged(nameof(MinRowHeight));
         foreach (var color in Colors)
         {
             color.Refresh();
@@ -120,18 +169,188 @@ public sealed partial class TechScreensViewModel : EditableViewModel
         Refresh();
     }
 
-    // Vuelve a repartir y a dibujar, quedándose en la misma pantalla si sigue existiendo.
+    // ---------------------------------------------------------------- recuadro seleccionado
+
+    // El recuadro elegido en la vista previa: se busca por su referencia de pantallas, Fixture y parte, para no
+    // perderlo cuando el reparto se rehace (o cambia de pantalla).
+    private (int Reference, string Key, int Part)? _selectedBox;
+
+    [ObservableProperty]
+    public partial TechScreenBox? SelectedBox { get; set; }
+
+    public bool HasSelectedBox => SelectedBox is not null;
+
+    private TechScreenPage? BoxPage => SelectedPage?.Page;
+
+    public string SelectedBoxTitle => SelectedBox?.Title ?? "";
+
+    // Pantallas de la referencia del recuadro y, al final, «Pantalla nueva».
+    public IReadOnlyList<string> BoxScreenOptions { get; private set; } = [];
+
+    public int BoxScreenIndex
+    {
+        get => BoxPage?.Index ?? -1;
+        set
+        {
+            if (BoxPage is { } page && SelectedBox is { } box && value >= 0 && value != page.Index)
+            {
+                EditBox("tech-box-screen", () => TechScreenEdits.ToScreen(Session.Project, page, box, value));
+            }
+        }
+    }
+
+    public decimal? BoxLeft
+    {
+        get => SelectedBox?.Left;
+        set
+        {
+            if (value is decimal left && SelectedBox is { } box && (int)left != box.Left)
+            {
+                OnBoxDragged(box, (int)left, box.Top);
+            }
+        }
+    }
+
+    public decimal? BoxTop
+    {
+        get => SelectedBox?.Top;
+        set
+        {
+            if (value is decimal top && SelectedBox is { } box && (int)top != box.Top)
+            {
+                OnBoxDragged(box, box.Left, (int)top);
+            }
+        }
+    }
+
+    // Filas por columna del recuadro; vacío, las que quepan.
+    public decimal? BoxRows
+    {
+        get => SelectedBox is { } box && ManualRows(box) is int rows ? rows : null;
+        set
+        {
+            if (BoxPage is { } page && SelectedBox is { } box && (int?)value != ManualRows(box))
+            {
+                EditBox("tech-box-rows", () => TechScreenEdits.SetRows(Session.Project, page, box, (int?)value));
+            }
+        }
+    }
+
+    public int BoxRowsHint => SelectedBox?.RowsPerColumn ?? 0;
+
+    private int? ManualRows(TechScreenBox box) =>
+        Session.Project.TechScreens.BoxEdits.FirstOrDefault(e => e.Reference == BoxPage?.Reference && e.Key == box.Key)?
+            .Parts.FirstOrDefault(p => p.Part == box.Part)?.RowsPerColumn;
+
+    // Assets por los que se puede partir: todos menos el primero.
+    public IReadOnlyList<string> SplitOptions => SelectedBox?.Assets.Skip(1).Where(a => a.Length > 0).ToList() ?? [];
+
+    public bool CanSplit => SplitOptions.Count > 0;
+
+    [ObservableProperty]
+    public partial string? SplitAsset { get; set; }
+
+    // Clic en un recuadro de la vista previa.
+    public void OnBoxClicked(TechScreenBox? box)
+    {
+        _selectedBox = box is null || BoxPage is null ? null : (BoxPage.Reference, box.Key, box.Part);
+        SelectBox(box);
+    }
+
+    // Recuadro arrastrado (o X/Y escritos) en la pantalla que se está viendo.
+    public void OnBoxDragged(TechScreenBox box, int left, int top)
+    {
+        if (BoxPage is { } page)
+        {
+            _selectedBox = (page.Reference, box.Key, box.Part);
+            EditBox("tech-box-move", () => TechScreenEdits.Move(Session.Project, page, box, left, top));
+        }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void Split()
+    {
+        if (BoxPage is { } page && SelectedBox is { } box && SplitAsset is { } asset)
+        {
+            EditBox("tech-box-split", () => TechScreenEdits.Split(Session.Project, page, box, asset));
+        }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void ResetBox()
+    {
+        if (BoxPage is { } page && SelectedBox is { } box)
+        {
+            EditBox("tech-box-reset", () => TechScreenEdits.Reset(Session.Project, page, box));
+        }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void ResetAllBoxes()
+    {
+        Session.Change("tech-box-reset-all", () => TechScreenEdits.ResetAll(Session.Project));
+        Refresh();
+    }
+
+    // Cada retoque es un paso de deshacer; después se vuelve a repartir y el recuadro sigue elegido.
+    private void EditBox(string key, Action action)
+    {
+        Session.Change(key, action);
+        Refresh();
+    }
+
+    private void SelectBox(TechScreenBox? box)
+    {
+        SelectedBox = box;
+        var page = BoxPage;
+        BoxScreenOptions = page is null
+            ? []
+            : [.. Pages.Where(p => p.Page.Reference == page.Reference).Select(p => p.Page.Number.ToString("00", CultureInfo.InvariantCulture)), L.T("Pantalla nueva")];
+        SplitAsset = SplitOptions.FirstOrDefault();
+        OnPropertyChanged(nameof(HasSelectedBox));
+        OnPropertyChanged(nameof(SelectedBoxTitle));
+        OnPropertyChanged(nameof(BoxScreenOptions));
+        OnPropertyChanged(nameof(BoxScreenIndex));
+        OnPropertyChanged(nameof(BoxLeft));
+        OnPropertyChanged(nameof(BoxTop));
+        OnPropertyChanged(nameof(BoxRows));
+        OnPropertyChanged(nameof(BoxRowsHint));
+        OnPropertyChanged(nameof(SplitOptions));
+        OnPropertyChanged(nameof(CanSplit));
+    }
+
+    partial void OnSelectedPageChanged(TechPageOption? value)
+    {
+        // Al cambiar de pantalla a mano, el recuadro elegido deja de estar a la vista.
+        if (_selectedBox is { } key && value?.Page.Boxes.FirstOrDefault(b => value.Page.Reference == key.Reference && b.Key == key.Key && b.Part == key.Part) is { } box)
+        {
+            SelectBox(box);
+        }
+        else
+        {
+            _selectedBox = null;
+            SelectBox(null);
+        }
+    }
+
+    // Vuelve a repartir y a dibujar, quedándose en la misma pantalla si sigue existiendo, o en la del recuadro
+    // elegido si se ha movido a otra.
     public void Refresh()
     {
         var project = Session.Project;
         var plan = TechScreens.Plan(project);
         var selected = SelectedPage?.Page.Number;
+        var boxKey = _selectedBox;
         Pages.Clear();
         foreach (var page in plan.Pages)
         {
             Pages.Add(new TechPageOption(page, Core.Screen.Name(project.ScreenPrefix, page.Number), project.Screens[page.Number - 1].Description));
         }
-        SelectedPage = Pages.FirstOrDefault(p => p.Page.Number == selected) ?? Pages.FirstOrDefault();
+        _selectedBox = boxKey;
+        var withBox = boxKey is { } k
+            ? Pages.FirstOrDefault(p => p.Page.Reference == k.Reference && p.Page.Boxes.Any(b => b.Key == k.Key && b.Part == k.Part))
+            : null;
+        SelectedPage = withBox ?? Pages.FirstOrDefault(p => p.Page.Number == selected) ?? Pages.FirstOrDefault();
         HasPages = Pages.Count > 0;
         Warnings.Clear();
         foreach (var warning in plan.Warnings)
