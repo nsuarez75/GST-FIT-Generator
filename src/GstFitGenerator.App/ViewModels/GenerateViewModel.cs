@@ -108,7 +108,8 @@ public sealed partial class GenerateViewModel : ObservableObject
             }
             OutputFolder = folder;
         }
-        var existing = Generation.Planned(session.Project, _options, folder, Today).Where(File.Exists).Select(Path.GetFileName).ToList();
+        var existing = Generation.Planned(session.Project, _options, folder, Today).Where(File.Exists)
+            .Select(f => Path.GetRelativePath(folder, f)).ToList();
         if (existing.Count > 0 && !await dialogs.Confirm(L.T("Sobrescribir"),
                 L.T("Ya existen en la carpeta de salida:\n{0}\n\n¿Sobrescribirlos?", string.Join("\n", existing)), L.T("Sobrescribir")))
         {
@@ -142,7 +143,7 @@ public sealed partial class GenerateViewModel : ObservableObject
         {
             IsBusy = false;
         }
-        await dialogs.Message(L.T("Generado"), L.T("Archivos escritos en {0}:\n\n{1}", folder, string.Join("\n", written.Select(Path.GetFileName))));
+        await dialogs.Message(L.T("Generado"), L.T("Archivos escritos en {0}:\n\n{1}", folder, string.Join("\n", written.Select(f => Path.GetRelativePath(folder, f)))));
         Done?.Invoke();
     }
 }
