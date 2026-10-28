@@ -81,7 +81,7 @@ GeneradorFIT queda en desuso, congelado en la V3.0.1.
 ## Screen Names
 
 - 24 filas con nombre y descripción.
-- El nombre se rellena a partir de un prefijo del proyecto: `<prefijo>_Traceability_01` … `_24`. La descripción se escribe a mano.
+- El nombre se rellena a partir de un prefijo del proyecto, que es el nombre de la primera pantalla sin `_Traceability_01` (p. ej. `CO_0000_100`). Como en TIA, el número del final del prefijo aumenta en uno en cada pantalla: `CO_0000_100_Traceability_01`, `CO_0000_101_Traceability_02` … `CO_0000_123_Traceability_24`. La descripción se escribe a mano.
 - Solo se usan para la hoja `Screens Names` de la plantilla.
 
 ## Control de versiones

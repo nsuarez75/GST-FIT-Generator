@@ -128,7 +128,7 @@ public static partial class L
         ["NÚMERO"] = "NUMBER",
         ["Features que no pertenecen a ninguna referencia (botoneras, HMIs). Salen al final del FIT con PartReference 99 y al final de cada TableInfo; no ocupan pointers."] =
             "Features that belong to no reference (push-button panels, HMIs). They go at the end of the FIT with PartReference 99 and at the end of each TableInfo; they take no pointers.",
-        ["Las 24 pantallas de trazabilidad del HMI. El nombre se forma con el prefijo; la descripción se escribe a mano."] = "The 24 traceability screens of the HMI. The name is built from the prefix; the description is typed by hand.",
+        ["Las 24 pantallas de trazabilidad del HMI. El prefijo es el nombre de la primera pantalla sin _Traceability_01 (p. ej. CO_0000_100); su número del final aumenta en uno en cada pantalla. La descripción se escribe a mano."] = "The 24 traceability screens of the HMI. The prefix is the name of the first screen without _Traceability_01 (e.g. CO_0000_100); its trailing number goes up by one on each screen. The description is typed by hand.",
         ["Prefijo"] = "Prefix",
         ["DESCRIPCIÓN"] = "DESCRIPTION",
         ["Lista de cambios del proyecto; sale en la hoja Control Versiones de la plantilla. Al generar, si algo ha cambiado de posición, la app propone añadir una entrada."] =

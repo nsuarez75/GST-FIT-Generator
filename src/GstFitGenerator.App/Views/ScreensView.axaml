@@ -7,7 +7,7 @@
     <DockPanel Margin="24,20">
         <TextBlock DockPanel.Dock="Top" Classes="h1" Text="{l:T 'Screen Names'}" Margin="0,0,0,8" />
         <TextBlock DockPanel.Dock="Top" Classes="muted" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
-                   Text="{l:T 'Las 24 pantallas de trazabilidad del HMI. El nombre se forma con el prefijo; la descripción se escribe a mano.'}" />
+                   Text="{l:T 'Las 24 pantallas de trazabilidad del HMI. El prefijo es el nombre de la primera pantalla sin _Traceability_01 (p. ej. CO_0000_100); su número del final aumenta en uno en cada pantalla. La descripción se escribe a mano.'}" />
         <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,300" ColumnSpacing="12" Margin="0,0,0,14">
             <TextBlock Classes="label" Text="{l:T 'Prefijo'}" VerticalAlignment="Center" />
             <TextBox Grid.Column="1" Classes="mono" Text="{Binding Prefix, UpdateSourceTrigger=LostFocus}" />
