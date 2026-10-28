@@ -104,7 +104,34 @@ public sealed class Screen
 
     public static List<Screen> Defaults() => Enumerable.Range(0, Count).Select(_ => new Screen()).ToList();
 
-    public static string Name(string prefix, int number) => $"{prefix}_Traceability_{number:00}";
+    // El prefijo es el nombre de la primera pantalla sin _Traceability_01 y su número del final aumenta en uno
+    // en cada pantalla, como en TIA: CO_0000_100 -> CO_0000_100_Traceability_01, CO_0000_101_Traceability_02…
+    public static string Name(string prefix, int number) => $"{Prefix(prefix, number)}_Traceability_{number:00}";
+
+    // Número de la pantalla en TIA: el del final del prefijo más number - 1. Null si el prefijo no acaba en número.
+    public static int? HmiNumber(string prefix, int number) =>
+        SplitPrefix(prefix) is var (_, first, _) ? first + number - 1 : null;
+
+    private static string Prefix(string prefix, int number) =>
+        SplitPrefix(prefix) is var (head, first, digits)
+            ? head + (first + number - 1).ToString(new string('0', digits), System.Globalization.CultureInfo.InvariantCulture)
+            : prefix;
+
+    // CO_0000_100 -> ("CO_0000_", 100, 3).
+    private static (string Head, int First, int Digits)? SplitPrefix(string prefix)
+    {
+        var start = prefix.Length;
+        while (start > 0 && char.IsAsciiDigit(prefix[start - 1]))
+        {
+            start--;
+        }
+        var digits = prefix.Length - start;
+        if (digits == 0 || digits > 9 || start == 0 || prefix[start - 1] != '_')
+        {
+            return null;
+        }
+        return (prefix[..start], int.Parse(prefix[start..], System.Globalization.CultureInfo.InvariantCulture), digits);
+    }
 }
 
 public sealed class VersionEntry
