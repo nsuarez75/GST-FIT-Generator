@@ -10,7 +10,9 @@ public static partial class L
         ["{0} no tiene un formato válido: {1}"] = "{0} does not have a valid format: {1}",
 
         // ---- Importar plantilla
-        ["La plantilla no tiene ninguna hoja PLC-Ref."] = "The template has no PLC-Ref sheet.",
+        ["La plantilla no tiene ninguna hoja PLC-Ref ni la hoja FIT."] = "The template has no PLC-Ref sheet and no FIT sheet.",
+        ["Importado de la hoja FIT: asigna la tecnología de cada tipo en Tecnologías."] = "Imported from the FIT sheet: set the technology of each type in Technologies.",
+        ["La hoja FIT no trae el Fixture de las features: rellénalo en cada referencia."] = "The FIT sheet does not include the features' Fixture: fill it in on each reference.",
         ["Solo se importan las {0} primeras referencias."] = "Only the first {0} references are imported.",
         ["A la hoja «{0}» le falta la columna «{1}»."] = "The «{0}» sheet is missing the «{1}» column.",
 
@@ -77,6 +79,13 @@ public static partial class L
         ["Tipo nuevo en el catálogo: {0} · {1}"] = "New type in the catalog: {0} · {1}",
         ["El tipo {0} es «{1}» en el catálogo y «{2}» en la plantilla: se queda el del catálogo."] = "Type {0} is «{1}» in the catalog and «{2}» in the template: the catalog one is kept.",
         ["Importar plantilla: {0}"] = "Import template: {0}",
+        ["Importar referencias"] = "Import references",
+        ["Importar referencias de un Excel…"] = "Import references from an Excel file…",
+        ["Importar referencias: {0}"] = "Import references: {0}",
+        ["Referencia {0}: se sustituye ({1} features → {2})"] = "Reference {0}: replaced ({1} features → {2})",
+        ["Referencia {0}: nueva, {1} features"] = "Reference {0}: new, {1} features",
+        ["Location nueva: {0}"] = "New location: {0}",
+        ["No caben las referencias {0}: el FB admite como máximo {1}."] = "References {0} do not fit: the FB allows at most {1}.",
         ["Ya hay {0} referencias, el máximo del FB."] = "There are already {0} references, the FB maximum.",
         ["Quitar referencia"] = "Remove reference",
         ["Quitar referencia…"] = "Remove reference…",

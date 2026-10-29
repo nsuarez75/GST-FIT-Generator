@@ -346,6 +346,61 @@ public sealed partial class MainViewModel : ObservableObject
         Session.Load(project, catalog);
     }
 
+    // Lleva las referencias de una plantilla o de un Excel FIT al proyecto abierto, sin empezar uno nuevo:
+    // sustituye las que tengan el mismo número y añade las demás. Se puede deshacer.
+    [RelayCommand]
+    private async Task ImportReferences()
+    {
+        var title = L.T("Importar referencias");
+        var path = await Dialogs.OpenFile(title, ExcelFilter);
+        if (path is null)
+        {
+            return;
+        }
+        var catalog = Storage.Clone(Session.Catalog);
+        ImportResult result;
+        try
+        {
+            result = await Task.Run(() => TemplateImport.Import(path, catalog));
+        }
+        // ClosedXML lanza excepciones de varios tipos con un Excel dañado o abierto en otro programa.
+        catch (Exception e)
+        {
+            await Dialogs.Message(title, L.T("No se pudo leer la plantilla: {0}", e.Message));
+            return;
+        }
+        var project = Session.Project;
+        var summary = result.Project.References
+            .Select(r => project.FindReference(r.Number) is { } old
+                ? L.T("Referencia {0}: se sustituye ({1} features → {2})", r.Number, old.Features.Count, r.Features.Count)
+                : L.T("Referencia {0}: nueva, {1} features", r.Number, r.Features.Count))
+            .ToList();
+        summary.AddRange(result.Project.Locations.Where(l => project.FindLocation(l.Number) is null)
+            .Select(l => L.T("Location nueva: {0}", l.Name)));
+        summary.AddRange(result.AddedTypes.Select(t => L.T("Tipo nuevo en el catálogo: {0} · {1}", t.Number, t.Display)));
+        var warnings = result.DifferentTypes
+            .Select(d => L.T("El tipo {0} es «{1}» en el catálogo y «{2}» en la plantilla: se queda el del catálogo.", d.Catalog.Number, d.Catalog.Display, d.Template.Display))
+            .Concat(result.Notes)
+            .ToList();
+        var (accepted, _) = await Dialogs.Changes(L.T("Importar referencias: {0}", Path.GetFileName(path)), summary, warnings);
+        if (!accepted)
+        {
+            return;
+        }
+        var skipped = new List<int>();
+        Session.Change("import-references", () =>
+        {
+            skipped = TemplateImport.MergeReferences(project, result.Project);
+            Session.Catalog.Types.AddRange(result.AddedTypes);
+            Session.Catalog.Types.Sort((a, b) => a.Number.CompareTo(b.Number));
+        });
+        ShowReference(result.Project.References.Select(r => r.Number).Except(skipped).DefaultIfEmpty(project.References[0].Number).First());
+        if (skipped.Count > 0)
+        {
+            await Dialogs.Message(title, L.T("No caben las referencias {0}: el FB admite como máximo {1}.", string.Join(", ", skipped), Reference.Max));
+        }
+    }
+
     // ---------------------------------------------------------------- editar
 
     [RelayCommand(CanExecute = nameof(CanUndo))]

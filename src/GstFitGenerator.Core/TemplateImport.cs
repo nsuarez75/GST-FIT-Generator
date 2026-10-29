@@ -1,4 +1,5 @@
 // Importar una plantilla Excel de las de antes (o una generada por la app) y crear con ella un proyecto.
+// Si el libro no tiene hojas PLC-Ref pero sí la hoja FIT (el Excel FIT de la plataforma I4), se importa de ella.
 // Se leen los valores que Excel calculó y guardó (CachedValue), no las fórmulas: ClosedXML no sabe calcular
 // todas las funciones de Excel (XLOOKUP, por ejemplo). Las columnas se buscan por su título, así que valen
 // plantillas con más de 4 grupos de fixture.
@@ -50,7 +51,11 @@ public static partial class TemplateImport
             .ToList();
         if (referenceSheets.Count == 0)
         {
-            throw new InvalidDataException(L.T("La plantilla no tiene ninguna hoja PLC-Ref."));
+            if (!book.Worksheets.TryGetWorksheet("FIT", out var fit))
+            {
+                throw new InvalidDataException(L.T("La plantilla no tiene ninguna hoja PLC-Ref ni la hoja FIT."));
+            }
+            ReadFit(fit, catalog, result);
         }
         foreach (var (sheet, number) in referenceSheets.Take(Reference.Max))
         {
@@ -61,16 +66,17 @@ public static partial class TemplateImport
             result.Notes.Add(L.T("Solo se importan las {0} primeras referencias.", Reference.Max));
         }
 
+        if (referenceSheets.Count > 0 && book.Worksheets.TryGetWorksheet("PLC-Aux", out var aux))
+        {
+            ReadAux(aux, project);
+        }
+
         // Locations: la plantilla solo tiene números; se crean con un nombre provisional para renombrarlas.
         foreach (var number in project.References.SelectMany(r => r.Features).Select(f => f.Location).OfType<int>().Distinct().Order())
         {
             project.Locations.Add(new Location { Number = number, Name = $"Location {number}" });
         }
 
-        if (book.Worksheets.TryGetWorksheet("PLC-Aux", out var aux))
-        {
-            ReadAux(aux, project);
-        }
         if (book.Worksheets.TryGetWorksheet("Screens Names", out var screens))
         {
             ReadScreens(screens, project);
@@ -82,6 +88,48 @@ public static partial class TemplateImport
         return result;
     }
 
+    // Lleva al proyecto abierto las referencias importadas: la que ya existe con el mismo número se sustituye y
+    // las demás se añaden. También pasan las locations y las tecnologías de tipo que el proyecto no tenga, y la
+    // planta y la línea si estaban vacías. Lo demás del proyecto no se toca. Devuelve las referencias que no
+    // caben porque el proyecto llegaría a más de Reference.Max.
+    public static List<int> MergeReferences(Project target, Project imported)
+    {
+        var skipped = new List<int>();
+        foreach (var reference in imported.References)
+        {
+            var index = target.References.FindIndex(r => r.Number == reference.Number);
+            if (index >= 0)
+            {
+                target.References[index] = reference;
+            }
+            else if (target.References.Count < Reference.Max)
+            {
+                target.References.Add(reference);
+            }
+            else
+            {
+                skipped.Add(reference.Number);
+            }
+        }
+        target.References.Sort((a, b) => a.Number.CompareTo(b.Number));
+
+        foreach (var location in imported.Locations.Where(l => target.FindLocation(l.Number) is null))
+        {
+            target.Locations.Add(location);
+        }
+        target.Locations.Sort((a, b) => a.Number.CompareTo(b.Number));
+        foreach (var (type, technology) in imported.TypeTechnologies)
+        {
+            target.TypeTechnologies.TryAdd(type, technology);
+        }
+        if (target.Plant == "" && target.Line == "")
+        {
+            target.Plant = imported.Plant;
+            target.Line = imported.Line;
+        }
+        return skipped;
+    }
+
     // ABC_XYZ_FIT_rev3_20260115 -> ABC_XYZ.
     public static string ProjectName(string fileName)
     {
@@ -89,11 +137,12 @@ public static partial class TemplateImport
         return m.Success ? m.Groups[1].Value : fileName;
     }
 
-    // ABC_XYZ_FIT_rev3_20260115 -> 3. Sin rev en el nombre, 0.
+    // ABC_XYZ_FIT_rev3_20260115 -> 3; ABC_XYZ_FIT_20260115_v3 -> 3. Sin rev ni v en el nombre, 0.
     public static int Revision(string fileName)
     {
         var m = RevisionPattern().Match(fileName);
-        return m.Success && int.TryParse(m.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var rev) ? rev : 0;
+        var digits = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[3].Value;
+        return m.Success && int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var rev) ? rev : 0;
     }
 
     private static void ReadTypes(IXLWorksheet sheet, Catalog catalog, ImportResult result)
@@ -202,6 +251,103 @@ public static partial class TemplateImport
         }
     }
 
+    // Hoja FIT: una fila por feature y utillaje, en el orden de los pointers; las filas seguidas de la misma feature
+    // son sus utillajes y PartReference 99 son los auxiliares. El tipo se busca en el catálogo por su texto, sin
+    // espacios ni mayúsculas («ArcWeld | Standard» = «Arc Weld |Standard»); si no está, se añade con un número libre.
+    // Esta hoja no trae el Fixture (salvo en Asset, si se rellenó) ni la tecnología de cada tipo.
+    private static void ReadFit(IXLWorksheet sheet, Catalog catalog, ImportResult result)
+    {
+        var project = result.Project;
+        var columns = Columns(sheet);
+        int Col(string header) => columns.TryGetValue(Normalize(header), out var c)
+            ? c
+            : throw new InvalidDataException(L.T("A la hoja «{0}» le falta la columna «{1}».", sheet.Name, header));
+        int plant = Col("Plant"), line = Col("Line"), partReference = Col("PartReference"), asset = Col("Asset");
+        int layoutName = Col("LayoutName"), working = Col("Working"), client = Col("FeatureReferenceClient");
+        int type = Col("Process | FeatureType"), location = Col("Location"), featureId = Col("FeatureId"), critical = Col("CriticalFeature");
+
+        var types = new Dictionary<string, FeatureType>();
+        foreach (var t in catalog.Types)
+        {
+            types.TryAdd(Normalize(t.Display), t);
+        }
+        (int Reference, string Client, string Type, int? Location, long? FeatureId, bool Critical)? previous = null;
+        var missingFixture = false;
+        for (var row = 2; row <= LastRow(sheet); row++)
+        {
+            if (Int(sheet, row, partReference) is not int number)
+            {
+                continue;
+            }
+            if (project.Plant == "")
+            {
+                project.Plant = Str(sheet, row, plant);
+                project.Line = Str(sheet, row, line);
+            }
+            var fixture = new FixtureUse { Fixture = Str(sheet, row, asset), LayoutName = Str(sheet, row, layoutName), Working = Str(sheet, row, working) };
+            if (number == 99)
+            {
+                project.Auxiliaries.Add(new AuxFeature { Asset = fixture.LayoutName, Working = fixture.Working, FeatureId = Long(sheet, row, featureId) });
+                continue;
+            }
+            missingFixture |= fixture.Fixture == "";
+
+            var key = (Reference: number, Client: Str(sheet, row, client), Type: Str(sheet, row, type), Location: Int(sheet, row, location),
+                FeatureId: Long(sheet, row, featureId), Critical: string.Equals(Str(sheet, row, critical), "True", StringComparison.OrdinalIgnoreCase));
+            var reference = project.FindReference(number);
+            if (reference is null)
+            {
+                reference = new Reference { Number = number };
+                project.References.Add(reference);
+            }
+            if (key == previous)
+            {
+                reference.Features[^1].Fixtures.Add(fixture);
+                continue;
+            }
+            previous = key;
+            reference.Features.Add(new Feature
+            {
+                ClientReference = key.Client,
+                Type = TypeNumber(key.Type),
+                Location = key.Location,
+                FeatureId = key.FeatureId,
+                Critical = key.Critical,
+                Fixtures = [fixture],
+            });
+        }
+        project.References.Sort((a, b) => a.Number.CompareTo(b.Number));
+        catalog.Types.Sort((a, b) => a.Number.CompareTo(b.Number));
+        result.Notes.Add(L.T("Importado de la hoja FIT: asigna la tecnología de cada tipo en Tecnologías."));
+        if (missingFixture)
+        {
+            result.Notes.Add(L.T("La hoja FIT no trae el Fixture de las features: rellénalo en cada referencia."));
+        }
+
+        int? TypeNumber(string text)
+        {
+            if (text == "")
+            {
+                return null;
+            }
+            if (types.TryGetValue(Normalize(text), out var known))
+            {
+                return known.Number;
+            }
+            var parts = text.Split('|', 2);
+            var added = new FeatureType
+            {
+                Number = catalog.Types.Count == 0 ? 1 : catalog.Types.Max(t => t.Number) + 1,
+                Process = parts[0].Trim(),
+                Detail = parts.Length > 1 ? parts[1].Trim() : "",
+            };
+            catalog.Types.Add(added);
+            result.AddedTypes.Add(added);
+            types[Normalize(text)] = added;
+            return added.Number;
+        }
+    }
+
     private static void ReadAux(IXLWorksheet sheet, Project project)
     {
         for (var row = 2; row <= LastRow(sheet); row++)
@@ -225,10 +371,12 @@ public static partial class TemplateImport
         }
     }
 
-    // La lista de cambios está bajo la celda «Fecha :»; la descripción, en la columna de al lado.
+    // La lista de cambios está bajo la celda «Fecha :» («Date:» en las plantillas en inglés); la descripción,
+    // en la columna de al lado.
     private static void ReadVersions(IXLWorksheet sheet, Project project)
     {
-        var header = sheet.CellsUsed().FirstOrDefault(c => Text(c).StartsWith("Fecha", StringComparison.OrdinalIgnoreCase));
+        var header = sheet.CellsUsed().FirstOrDefault(c =>
+            Text(c).StartsWith("Fecha", StringComparison.OrdinalIgnoreCase) || Text(c).StartsWith("Date", StringComparison.OrdinalIgnoreCase));
         if (header is null)
         {
             return;
@@ -309,7 +457,7 @@ public static partial class TemplateImport
     [GeneratedRegex(@"^(.+?)_FIT(_|$)", RegexOptions.IgnoreCase)]
     private static partial Regex ProjectNamePattern();
 
-    [GeneratedRegex(@"_rev(\d+)(_|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"_rev(\d+)(_|$)|_v(\d+)$", RegexOptions.IgnoreCase)]
     private static partial Regex RevisionPattern();
 
     [GeneratedRegex(@"^(.*)_Traceability_\d+$")]

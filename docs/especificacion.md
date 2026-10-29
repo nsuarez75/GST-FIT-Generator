@@ -122,6 +122,14 @@ Acordado en la entrevista del 2026-10-28.
 - Botón «Importar plantilla Excel»: crea un proyecto a partir de una plantilla como las de hasta ahora (hojas `PLC-RefN`, `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`).
 - Los tipos de feature que no estén en el catálogo se añaden a él. Si un número ya existe con otro texto, se queda el del catálogo y la app enseña las diferencias.
 - La tecnología de cada tipo y la lista de tecnologías (AJ-AK) pasan al proyecto.
+- Valen las plantillas en inglés: en `Control Versiones` la cabecera puede ser `Fecha` o `Date`. La revisión se toma de `_rev<N>_` o de `_v<N>` al final del nombre del archivo (#46).
+
+### Recuperar datos de otras instalaciones (#46)
+
+- Si el libro no tiene hojas `PLC-RefN` pero sí la hoja `FIT` (el Excel FIT de la plataforma I4), se importa de ella: una feature por cada grupo de filas seguidas con la misma referencia, FeatureReferenceClient, tipo, Location, FeatureId y CriticalFeature (cada fila es un utillaje, con LayoutName y Working). PartReference 99 son los auxiliares.
+- El tipo se busca en el catálogo por su texto sin espacios ni mayúsculas («ArcWeld | Standard» = «Arc Weld |Standard»). Si no está, se añade al catálogo con el número siguiente al último.
+- La hoja FIT no trae la tecnología de cada tipo ni el Fixture (salvo en Asset, si se rellenó): la app lo avisa para rellenarlos a mano.
+- «Más → Importar referencias de un Excel…» lleva al proyecto abierto las referencias de una plantilla o de un Excel FIT, sin empezar un proyecto nuevo: la referencia con el mismo número se sustituye y las demás se añaden. También pasan las locations y las tecnologías de tipo que el proyecto no tenga, y la planta y la línea si estaban vacías; lo demás del proyecto no se toca. Antes enseña qué se sustituye y qué se añade, y se puede deshacer. Las referencias que pasarían del máximo del FB no se importan y se avisa.
 
 ## Generar
 

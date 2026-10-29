@@ -95,6 +95,33 @@ public sealed class MainWindowTests : IDisposable
         Shot(window, "01-proyecto");
     }
 
+    [AvaloniaFact]
+    public async Task Importar_referencias_de_un_excel_FIT_las_lleva_al_proyecto_abierto_y_se_puede_deshacer()
+    {
+        var (_, main, dialogs) = await Open();
+        var other = FakeProject.Create();
+        other.References[0].Number = 3;
+        other.References[0].Features.RemoveAt(0);
+        var fit = Path.Combine(_dir, "OTRA_FIT_20260115_v1.xlsx");
+        using (var book = ExcelWriters.Fit(other, FakeProject.Catalog()))
+        {
+            book.SaveAs(fit);
+        }
+        dialogs.Files.Enqueue(fit);
+
+        await main.ImportReferencesCommand.ExecuteAsync(null);
+
+        var project = main.Session.Project;
+        Assert.Equal("PRUEBA", project.Name);
+        Assert.Equal([1, 2, 3], project.References.Select(r => r.Number));
+        Assert.Equal(4, project.FindReference(3)!.Features.Count);
+        Assert.Contains(dialogs.ChangeLists[^1], c => c.Contains("Referencia 3: nueva", StringComparison.Ordinal));
+        Assert.Equal(["Referencia 1", "Referencia 2", "Referencia 3"], main.FindNode(NavKind.References)!.Children.Select(c => c.Title));
+
+        main.UndoCommand.Execute(null);
+        Assert.Equal([1, 2], main.Session.Project.References.Select(r => r.Number));
+    }
+
     [AvaloniaTheory]
     [InlineData(AppSettings.ThemeLight, L.Spanish, 1400)]
     [InlineData(AppSettings.ThemeDark, L.English, 1400)]
