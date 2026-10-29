@@ -90,7 +90,7 @@ public static partial class TemplateImport
 
     // Lleva al proyecto abierto las referencias importadas: la que ya existe con el mismo número se sustituye y
     // las demás se añaden. También pasan las locations y las tecnologías de tipo que el proyecto no tenga, y la
-    // planta y la línea si estaban vacías. Lo demás del proyecto no se toca. Devuelve las referencias que no
+    // planta, la línea y las cifras del FeatureId si estaban vacías. Lo demás del proyecto no se toca. Devuelve las referencias que no
     // caben porque el proyecto llegaría a más de Reference.Max.
     public static List<int> MergeReferences(Project target, Project imported)
     {
@@ -121,6 +121,10 @@ public static partial class TemplateImport
         foreach (var (type, technology) in imported.TypeTechnologies)
         {
             target.TypeTechnologies.TryAdd(type, technology);
+        }
+        if (target.FeatureIdDigits == 0)
+        {
+            target.FeatureIdDigits = imported.FeatureIdDigits;
         }
         if (target.Plant == "" && target.Line == "")
         {
@@ -226,6 +230,7 @@ public static partial class TemplateImport
                 feature.Fixtures = fixtures;
                 feature.Location = Int(sheet, row, location);
                 feature.FeatureId = Long(sheet, row, featureId);
+                NoteDigits(project, Str(sheet, row, featureId));
                 feature.Critical = string.Equals(Str(sheet, row, critical), "True", StringComparison.OrdinalIgnoreCase);
                 // Si la tabla de tipos no traía la tecnología de este tipo, se toma la de la fila.
                 if (typeNumber is int t && techNumber is int n && !project.TypeTechnologies.ContainsKey(t))
@@ -291,6 +296,7 @@ public static partial class TemplateImport
                 continue;
             }
             missingFixture |= fixture.Fixture == "";
+            NoteDigits(project, Str(sheet, row, featureId));
 
             var key = (Reference: number, Client: Str(sheet, row, client), Type: Str(sheet, row, type), Location: Int(sheet, row, location),
                 FeatureId: Long(sheet, row, featureId), Critical: string.Equals(Str(sheet, row, critical), "True", StringComparison.OrdinalIgnoreCase));
@@ -348,6 +354,15 @@ public static partial class TemplateImport
         }
     }
 
+    // Un FeatureId escrito como texto con ceros delante (00132) fija las cifras del proyecto, para no perderlos.
+    private static void NoteDigits(Project project, string featureId)
+    {
+        if (featureId.Length > 1 && featureId[0] == '0' && featureId.All(char.IsAsciiDigit))
+        {
+            project.FeatureIdDigits = Math.Max(project.FeatureIdDigits, featureId.Length);
+        }
+    }
+
     private static void ReadAux(IXLWorksheet sheet, Project project)
     {
         for (var row = 2; row <= LastRow(sheet); row++)
@@ -356,6 +371,7 @@ public static partial class TemplateImport
             if (asset != "")
             {
                 project.Auxiliaries.Add(new AuxFeature { Asset = asset, Working = Str(sheet, row, 2), FeatureId = Long(sheet, row, 3) });
+                NoteDigits(project, Str(sheet, row, 3));
             }
         }
     }

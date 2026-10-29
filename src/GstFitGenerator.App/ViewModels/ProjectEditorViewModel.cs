@@ -43,6 +43,23 @@ public sealed class ProjectEditorViewModel(MainViewModel host) : EditableViewMod
         }
     }
 
+    // Cifras del FeatureId (0 a 18); 0 lo escribe sin ceros delante.
+    public string FeatureIdDigits
+    {
+        get => Project.FeatureIdDigits.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        set
+        {
+            if (int.TryParse(value, out var n) && n is >= 0 and <= 18)
+            {
+                Edit(Project.FeatureIdDigits, n, v => Project.FeatureIdDigits = v);
+            }
+            else
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string ScreenPrefix
     {
         get => Project.ScreenPrefix;

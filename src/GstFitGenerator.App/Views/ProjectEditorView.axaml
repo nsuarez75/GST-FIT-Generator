@@ -10,7 +10,7 @@
             <TextBlock Classes="h1" Text="{l:T 'Proyecto'}" />
 
             <Border Classes="card">
-                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+                <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
                     <TextBlock Classes="label" Text="{l:T 'Nombre'}" VerticalAlignment="Center" />
                     <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
                     <TextBlock Grid.Column="2" Classes="label" Text="{l:T 'Revisión'}" VerticalAlignment="Center" />
@@ -21,8 +21,12 @@
                     <TextBlock Grid.Row="1" Grid.Column="2" Classes="label" Text="{l:T 'Línea (Line)'}" VerticalAlignment="Center" />
                     <TextBox Grid.Row="1" Grid.Column="3" Classes="mono" Text="{Binding Line, UpdateSourceTrigger=LostFocus}" />
 
-                    <TextBlock Grid.Row="2" Classes="label" Text="{l:T 'Plantilla'}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Classes="mono" Text="{Binding TemplateFile}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Row="2" Classes="label" Text="{l:T 'Cifras del FeatureId'}" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Classes="mono" Text="{Binding FeatureIdDigits, UpdateSourceTrigger=LostFocus}"
+                             ToolTip.Tip="{l:T 'Con ceros delante hasta tener estas cifras (5: 00132). 0: sin ceros.'}" />
+
+                    <TextBlock Grid.Row="3" Classes="label" Text="{l:T 'Plantilla'}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Classes="mono" Text="{Binding TemplateFile}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </Grid>
             </Border>
 

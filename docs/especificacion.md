@@ -122,6 +122,7 @@ Acordado en la entrevista del 2026-10-28.
 - Botón «Importar plantilla Excel»: crea un proyecto a partir de una plantilla como las de hasta ahora (hojas `PLC-RefN`, `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`).
 - Los tipos de feature que no estén en el catálogo se añaden a él. Si un número ya existe con otro texto, se queda el del catálogo y la app enseña las diferencias.
 - La tecnología de cada tipo y la lista de tecnologías (AJ-AK) pasan al proyecto.
+- FeatureId con ceros delante (#51): si la plantilla o el FIT lo traen como texto con ceros (`00132`), el proyecto guarda sus cifras («Cifras del FeatureId» en Proyecto; 0 = sin ceros) y la app, el Excel FIT y la plantilla lo escriben así. El código de PLC lleva el número.
 - Valen las plantillas en inglés: en `Control Versiones` la cabecera puede ser `Fecha` o `Date`. La revisión se toma de `_rev<N>_` o de `_v<N>` al final del nombre del archivo (#46).
 
 ### Recuperar datos de otras instalaciones (#46)

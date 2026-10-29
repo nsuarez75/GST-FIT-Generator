@@ -143,7 +143,7 @@ public sealed class AuxRowViewModel(Session session, AuxFeature aux) : EditableV
 
     public string FeatureId
     {
-        get => Text(Aux.FeatureId);
+        get => Session.Project.FeatureIdText(Aux.FeatureId);
         set
         {
             if (TryNumber(value, out var n))
