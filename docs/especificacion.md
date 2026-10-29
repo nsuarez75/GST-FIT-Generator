@@ -134,7 +134,7 @@ Acordado en la entrevista del 2026-10-28.
 ## Generar
 
 - Casillas para elegir qué se genera: las mismas que en GeneradorFIT, más «Plantilla Excel» y «Pantallas de trazabilidad (XML)».
-- Plantilla Excel: una hoja `PLC-RefN` por referencia, con los grupos de fixture seguidos (tantos como haga falta, desplazando las columnas siguientes), V-Z (Feature Type, Tech, Pointer, Main Pointer, Offset) y AD-AK (las cuatro listas para el HMI). Además lleva las hojas `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`. No hace falta que GeneradorFIT V3 pueda leerla.
+- Plantilla Excel: una hoja `PLC-RefN` por referencia, con los grupos de fixture seguidos (solo los que usa esa referencia, al menos uno, desplazando las columnas siguientes; #49), V-Z (Feature Type, Tech, Pointer, Main Pointer, Offset) y AD-AK (las cuatro listas para el HMI) en la plantilla de siempre, con 4 grupos. Además lleva las hojas `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`. No hace falta que GeneradorFIT V3 pueda leerla.
 - Excel FIT, `User_TableInfo_DB` (`TableInfo_1…N`, una tabla por cada columna de fixture usada), `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus init SCL: igual que GeneradorFIT V3.0.1, salvo que el número de tecnología se escribe siempre con 2 cifras (`Tech02`, `Tech10`).
 
 ## Decisiones técnicas

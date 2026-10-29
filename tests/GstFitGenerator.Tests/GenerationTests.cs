@@ -148,6 +148,23 @@ public class GenerationTests
     }
 
     [Fact]
+    public void Cada_hoja_PLC_Ref_lleva_solo_los_grupos_de_fixture_que_usa()
+    {
+        var project = FakeProject.Create();
+        project.References.Add(new Reference { Number = 2, Features = [FakeProject.Make("SOLO", 1, 20001, FakeProject.Fx("2000FIX01", "2000R1"))] });
+        project.References.Add(new Reference { Number = 3 });
+
+        using var book = ExcelWriters.Template(project, FakeProject.Catalog());
+
+        string Header(int reference, int column) => book.Worksheet($"PLC-Ref{reference}").Cell(1, column).GetString();
+        Assert.Equal("Fixture_2", Header(1, 7));
+        Assert.Equal("FeatureReference\nClient", Header(1, 10));
+        Assert.Equal("FeatureReference\nClient", Header(2, 7));
+        Assert.Equal("FeatureReference\nClient", Header(3, 7));
+        Assert.DoesNotContain(book.Worksheet("PLC-Ref2").Row(1).CellsUsed(), c => c.GetString() == "Fixture_2");
+    }
+
+    [Fact]
     public void La_plantilla_lleva_los_colores_de_siempre()
     {
         var project = FakeProject.Create();
@@ -155,7 +172,7 @@ public class GenerationTests
 
         using var book = ExcelWriters.Template(project, FakeProject.Catalog());
         var reference = book.Worksheet("PLC-Ref1");
-        var layout = TemplateLayout.For(project);
+        var layout = TemplateLayout.For(project.References[0]);
 
         Assert.Equal(XLColor.FromHtml("#156082"), reference.Cell(1, 1).Style.Fill.BackgroundColor);
         Assert.Equal(XLColor.White, reference.Cell(1, 1).Style.Font.FontColor);
