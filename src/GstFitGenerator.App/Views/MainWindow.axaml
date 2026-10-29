@@ -57,6 +57,7 @@
                             <MenuFlyout Placement="BottomEdgeAlignedLeft">
                                 <MenuItem Header="{l:T 'Guardar como… (exportar proyecto)'}" Command="{Binding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
                                 <MenuItem Header="{l:T 'Añadir referencia'}" Command="{Binding AddReferenceCommand}" />
+                                <MenuItem Header="{l:T 'Importar referencias de un Excel…'}" Command="{Binding ImportReferencesCommand}" />
                                 <Separator />
                                 <MenuItem Header="{l:T 'Acerca de'}" Command="{Binding AboutCommand}" />
                                 <MenuItem x:Name="ExitItem" Header="{l:T 'Salir'}" />
