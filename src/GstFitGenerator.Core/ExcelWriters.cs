@@ -91,10 +91,9 @@ public static class ExcelWriters
         book.Style.Font.FontName = BodyFont;
         book.Style.Font.FontSize = 11;
         WriteVersions(book.Worksheets.Add("Control Versiones"), project);
-        var layout = TemplateLayout.For(project);
         foreach (var reference in project.References.OrderBy(r => r.Number))
         {
-            WriteReference(book.Worksheets.Add($"PLC-Ref{reference.Number}"), project, catalog, reference, layout);
+            WriteReference(book.Worksheets.Add($"PLC-Ref{reference.Number}"), project, catalog, reference, TemplateLayout.For(reference));
         }
         WriteAux(book.Worksheets.Add("PLC-Aux"), project);
         WriteScreens(book.Worksheets.Add("Screens Names"), project);
@@ -301,14 +300,15 @@ public static class ExcelWriters
     }
 }
 
-// Columnas de las hojas PLC-RefN. Con 4 grupos de fixture (lo normal) son las de siempre: Fixture_1 en D,
-// FeatureReferenceClient en P, Feature Type en V y las listas del HMI desde AD. Con más grupos, todo se desplaza.
+// Columnas de una hoja PLC-RefN: solo los grupos de fixture que usa esa referencia (al menos uno), y detrás
+// todo lo demás desplazado. Con 4 grupos son las de la plantilla de siempre: Fixture_1 en D,
+// FeatureReferenceClient en P, Feature Type en V y las listas del HMI desde AD.
 public sealed record TemplateLayout(int FixtureGroups)
 {
-    public const int MinFixtureGroups = 4;
+    public const int MinFixtureGroups = 1;
 
-    public static TemplateLayout For(Project project) =>
-        new(Math.Max(MinFixtureGroups, project.References.SelectMany(r => r.Features).Select(f => f.Fixtures.Count).DefaultIfEmpty(0).Max()));
+    public static TemplateLayout For(Reference reference) =>
+        new(Math.Max(MinFixtureGroups, reference.Features.Select(f => f.Fixtures.Count).DefaultIfEmpty(0).Max()));
 
     public int FixtureColumn(int group) => 4 + (group - 1) * 3;
     public int Client => 4 + FixtureGroups * 3;
