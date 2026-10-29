@@ -9,6 +9,8 @@ public sealed class Project
     public string Line { get; set; } = "";
     // Número de revisión de la plantilla (el rev del nombre del Excel); lo pone el usuario a mano.
     public int Revision { get; set; }
+    // Cifras con las que se escribe el FeatureId, con ceros delante (5: 132 -> 00132). 0: tal cual.
+    public int FeatureIdDigits { get; set; }
     // Tecnologías de la 0 a la 10 con su nombre (lista CO_Traceability_Tech del HMI).
     public List<Technology> Technologies { get; set; } = Technology.Defaults();
     // Tecnología de cada tipo de feature del catálogo (número de tipo -> número de tecnología).
@@ -30,6 +32,10 @@ public sealed class Project
     public Reference? FindReference(int number) => References.FirstOrDefault(r => r.Number == number);
 
     public Location? FindLocation(int number) => Locations.FirstOrDefault(l => l.Number == number);
+
+    // FeatureId como se escribe en la app y en los Excel: con los ceros de FeatureIdDigits.
+    public string FeatureIdText(long? featureId) =>
+        featureId is long id ? id.ToString(new string('0', Math.Clamp(FeatureIdDigits, 1, 18)), System.Globalization.CultureInfo.InvariantCulture) : "";
 
     public string TechnologyName(int number) => Technologies.FirstOrDefault(t => t.Number == number)?.Name ?? "";
 

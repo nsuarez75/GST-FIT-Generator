@@ -80,6 +80,8 @@ public static partial class L
         ["El tipo {0} es «{1}» en el catálogo y «{2}» en la plantilla: se queda el del catálogo."] = "Type {0} is «{1}» in the catalog and «{2}» in the template: the catalog one is kept.",
         ["Importar plantilla: {0}"] = "Import template: {0}",
         ["Importar referencias"] = "Import references",
+        ["Cifras del FeatureId"] = "FeatureId digits",
+        ["Con ceros delante hasta tener estas cifras (5: 00132). 0: sin ceros."] = "With leading zeros up to this many digits (5: 00132). 0: no zeros.",
         ["Importar referencias de un Excel…"] = "Import references from an Excel file…",
         ["Importar referencias: {0}"] = "Import references: {0}",
         ["Referencia {0}: se sustituye ({1} features → {2})"] = "Reference {0}: replaced ({1} features → {2})",

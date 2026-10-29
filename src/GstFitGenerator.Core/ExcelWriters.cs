@@ -54,7 +54,7 @@ public static class ExcelWriters
             sheet.Cell(row, 8).Value = e.Feature.ClientReference;
             sheet.Cell(row, 9).Value = TypeText(catalog, e.Feature);
             sheet.Cell(row, 10).Value = PlcWriters.Text(e.Feature.Location);
-            sheet.Cell(row, 11).Value = PlcWriters.Text(e.Feature.FeatureId);
+            sheet.Cell(row, 11).Value = project.FeatureIdText(e.Feature.FeatureId);
             sheet.Cell(row, 12).Value = CriticalText(e.Feature.Critical);
             row++;
         }
@@ -66,7 +66,7 @@ public static class ExcelWriters
             sheet.Cell(row, 6).Value = aux.Asset;
             sheet.Cell(row, 7).Value = aux.Working;
             sheet.Cell(row, 10).Value = "1";
-            sheet.Cell(row, 11).Value = PlcWriters.Text(aux.FeatureId);
+            sheet.Cell(row, 11).Value = project.FeatureIdText(aux.FeatureId);
             sheet.Cell(row, 12).Value = "False";
             row++;
         }
@@ -166,7 +166,7 @@ public static class ExcelWriters
             sheet.Cell(row, layout.Client).Value = f.IsReserve ? ReserveText : f.ClientReference;
             sheet.Cell(row, layout.Client + 1).Value = f.IsReserve ? "" : TypeText(catalog, f);
             SetNumber(sheet.Cell(row, layout.Client + 2), f.Location);
-            SetNumber(sheet.Cell(row, layout.Client + 3), f.IsReserve ? 0 : f.FeatureId);
+            SetFeatureId(sheet.Cell(row, layout.Client + 3), project, f.IsReserve ? 0 : f.FeatureId);
             sheet.Cell(row, layout.Client + 4).Value = CriticalText(f.Critical);
             SetNumber(sheet.Cell(row, layout.FeatureType), f.Type);
             sheet.Cell(row, layout.FeatureType + 1).Value = r.Technology;
@@ -179,7 +179,7 @@ public static class ExcelWriters
             sheet.Cell(row, hmi).Value = r.Offset;
             sheet.Cell(row, hmi + 1).Value = f.IsReserve ? ReserveText : f.ClientReference;
             sheet.Cell(row, hmi + 2).Value = r.Offset;
-            SetNumber(sheet.Cell(row, hmi + 3), f.IsReserve ? 0 : f.FeatureId);
+            SetFeatureId(sheet.Cell(row, hmi + 3), project, f.IsReserve ? 0 : f.FeatureId);
             sheet.Cell(row, hmi + 4).Value = r.Offset;
             sheet.Cell(row, hmi + 5).Value = f.IsReserve || f.Fixtures.Count == 0 ? "" : f.Fixtures[0].LayoutName;
             // Filas alternas en gris en la parte de datos (de Plant a CriticalFeature).
@@ -232,7 +232,7 @@ public static class ExcelWriters
         {
             sheet.Cell(row, 1).Value = aux.Asset;
             sheet.Cell(row, 2).Value = aux.Working;
-            SetNumber(sheet.Cell(row, 3), aux.FeatureId);
+            SetFeatureId(sheet.Cell(row, 3), project, aux.FeatureId);
             row++;
         }
         sheet.Column(1).Width = 21.8;
@@ -290,6 +290,20 @@ public static class ExcelWriters
         feature.Type is int type && catalog.Find(type) is { } t ? t.Display : "";
 
     private static string CriticalText(bool critical) => critical ? "True" : "False";
+
+    // Con FeatureIdDigits, el FeatureId va como texto con sus ceros (como en las plantillas que lo traen así);
+    // las reservas (0) siguen siendo un número.
+    private static void SetFeatureId(IXLCell cell, Project project, long? value)
+    {
+        if (project.FeatureIdDigits > 0 && value is long id and not 0)
+        {
+            cell.Value = project.FeatureIdText(id);
+        }
+        else
+        {
+            SetNumber(cell, value);
+        }
+    }
 
     private static void SetNumber(IXLCell cell, long? value)
     {

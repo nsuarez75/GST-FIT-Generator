@@ -85,6 +85,38 @@ public class ImportTests
     }
 
     [Fact]
+    public void Los_FeatureId_con_ceros_delante_se_conservan_al_importar_y_al_generar()
+    {
+        var project = FakeProject.Create();
+        FakeProject.Find(project, "W1").FeatureId = 132;
+        project.FeatureIdDigits = 5;
+        using var template = Reread(ExcelWriters.Template(project, FakeProject.Catalog()));
+        using var fit = Reread(ExcelWriters.Fit(project, FakeProject.Catalog()));
+
+        var fromTemplate = TemplateImport.Import(template, FakeProject.Catalog()).Project;
+        var fromFit = TemplateImport.Import(fit, FakeProject.Catalog()).Project;
+
+        Assert.Equal(5, fromTemplate.FeatureIdDigits);
+        Assert.Equal(5, fromFit.FeatureIdDigits);
+        Assert.Equal(132, FakeProject.Find(fromTemplate, "W1").FeatureId);
+        Assert.Equal("00132", fromFit.FeatureIdText(FakeProject.Find(fromFit, "W1").FeatureId));
+        Assert.Contains(fit.Worksheet("FIT").Column(11).CellsUsed(), c => c.GetString() == "00132");
+        // El código de PLC lleva el número.
+        Assert.Contains("FeatureID := 132;", PlcWriters.TableInfoDb(project), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Sin_ceros_delante_el_FeatureId_se_escribe_tal_cual()
+    {
+        var project = FakeProject.Create();
+        using var template = Reread(ExcelWriters.Template(project, FakeProject.Catalog()));
+
+        Assert.Equal(0, TemplateImport.Import(template, FakeProject.Catalog()).Project.FeatureIdDigits);
+        Assert.Equal("10001", project.FeatureIdText(10001));
+        Assert.Equal("", project.FeatureIdText(null));
+    }
+
+    [Fact]
     public void Un_libro_sin_hojas_PLC_Ref_ni_FIT_no_se_importa()
     {
         using var book = new XLWorkbook();

@@ -602,7 +602,7 @@ public sealed class FeatureRowViewModel : EditableViewModel
 
     public string FeatureId
     {
-        get => IsReserve ? "" : Text(Feature.FeatureId);
+        get => IsReserve ? "" : Session.Project.FeatureIdText(Feature.FeatureId);
         set
         {
             if (!IsReserve && TryNumber(value, out var n))
