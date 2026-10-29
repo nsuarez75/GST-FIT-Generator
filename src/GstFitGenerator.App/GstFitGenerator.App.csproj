@@ -9,7 +9,7 @@
     <RootNamespace>GstFitGenerator.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\gst-fit-generator.ico</ApplicationIcon>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
