@@ -825,7 +825,7 @@ public sealed class MainWindowTests : IDisposable
         var (window, main, dialogs) = await Open();
 
         await main.AboutCommand.ExecuteAsync(null);
-        Assert.Contains("Acerca de: Creado por Ignacio Suarez. https://github.com/nsuarez75/GST-FIT-Generator", dialogs.Messages);
+        Assert.Contains($"Acerca de: GST FIT Generator, versión {MainViewModel.CurrentVersion.ToString(3)}.\nCreado por Ignacio Suarez (Alomatek). https://github.com/nsuarez75/GST-FIT-Generator", dialogs.Messages);
 
         await main.CheckForUpdates(_ => Task.FromResult<ReleaseInfo?>(new ReleaseInfo("v99.0.0", new Version(99, 0, 0), "https://github.com/x/y/releases/tag/v99.0.0")));
         Assert.True(main.HasUpdate);
