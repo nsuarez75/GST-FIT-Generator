@@ -6,7 +6,7 @@ namespace GstFitGenerator.Tests;
 public class GenerationTests
 {
     [Fact]
-    public void Tamanos_con_reservas_y_nombre_de_constante()
+    public void Compute_WithReserves_ReturnsSizesAndConstantNames()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Add(new Feature { ReserveTechnology = 2 });
@@ -22,7 +22,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void FB_carga_cada_feature_en_su_posicion_con_la_tecnologia_a_dos_cifras()
+    public void ConfigReferenceFb_Features_LoadsEachInItsPosition()
     {
         var project = FakeProject.Create();
         // Detrás de W1 (la lista empieza por MARCA).
@@ -40,7 +40,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void FB_sin_referencias_lleva_un_segmento_vacio()
+    public void ConfigReferenceFb_NoReferences_WritesEmptyNetwork()
     {
         var fb = PlcWriters.ConfigReferenceFb(new Project());
 
@@ -48,7 +48,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void TableInfo_una_tabla_por_columna_de_fixture_sin_repetidos_y_con_auxiliares()
+    public void TableInfoDb_FixtureColumns_OneTableEach()
     {
         var project = FakeProject.Create();
 
@@ -62,7 +62,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void CheckTech_una_variable_por_fixture_y_su_inicializacion()
+    public void CheckTechFixtures_Project_OneVariablePerFixture()
     {
         var project = FakeProject.Create();
 
@@ -84,7 +84,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Excel_FIT_una_fila_por_feature_y_utillaje_mas_los_auxiliares()
+    public void Fit_Project_OneRowPerFeatureAndFixture()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Add(new Feature { ReserveTechnology = 2 });
@@ -103,7 +103,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void La_plantilla_generada_se_importa_igual()
+    public void Template_ImportedAgain_SameProject()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Insert(2, new Feature { ReserveTechnology = 2 });
@@ -137,7 +137,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Con_cinco_fixtures_las_columnas_se_desplazan()
+    public void TemplateLayout_FiveFixtures_ShiftsColumns()
     {
         var layout = new TemplateLayout(5);
 
@@ -148,7 +148,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Cada_hoja_PLC_Ref_lleva_solo_los_grupos_de_fixture_que_usa()
+    public void Template_ReferenceSheet_OnlyUsedFixtureGroups()
     {
         var project = FakeProject.Create();
         project.References.Add(new Reference { Number = 2, Features = [FakeProject.Make("SOLO", 1, 20001, FakeProject.Fx("2000FIX01", "2000R1"))] });
@@ -165,7 +165,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void La_plantilla_lleva_los_colores_de_siempre()
+    public void Template_Always_UsesStandardColors()
     {
         var project = FakeProject.Create();
         project.Versions.Add(new VersionEntry { Date = new DateOnly(2026, 1, 15), Description = "Creación" });
@@ -189,7 +189,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Importar_anade_al_catalogo_los_tipos_nuevos_y_avisa_de_los_distintos()
+    public void Import_NewOrDifferentTypes_AddsAndWarns()
     {
         using var book = ExcelWriters.Template(FakeProject.Create(), FakeProject.Catalog());
         var catalog = new Catalog { Types = [new() { Number = 1, Process = "Soldadura", Detail = "Otro" }] };
@@ -202,7 +202,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Nombres_de_los_excel()
+    public void FileNames_ProjectAndRevision_ReturnsExcelNames()
     {
         var project = FakeProject.Create();
         project.Revision = 2;
@@ -217,7 +217,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Generar_escribe_lo_marcado_y_guarda_los_offsets()
+    public void Run_SelectedOutputs_WritesThemAndSavesOffsets()
     {
         var project = FakeProject.Create();
         var folder = Path.Combine(Path.GetTempPath(), "gstfit-test-" + Guid.NewGuid().ToString("N"));
@@ -245,7 +245,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void Avisos_del_proyecto()
+    public void Validate_ProjectProblems_ReturnsWarnings()
     {
         var project = FakeProject.Create();
         var w3 = FakeProject.Find(project, "W3");
@@ -264,7 +264,7 @@ public class GenerationTests
     }
 
     [Fact]
-    public void El_proyecto_se_guarda_y_se_abre_igual()
+    public void ToJson_Project_RoundTrips()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Add(new Feature { ReserveTechnology = 3 });

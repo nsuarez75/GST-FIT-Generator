@@ -8,7 +8,7 @@ public class EditingTests
         string.Join(" ", Layout.Rows(project).Select(r => r.Feature.IsReserve ? $"R{r.Technology}" : r.Feature.ClientReference));
 
     [Fact]
-    public void La_feature_nueva_va_detras_de_la_seleccionada_y_copia_fixtures_tipo_y_location()
+    public void AddFeature_WithSelection_InsertsAfterAndCopiesData()
     {
         var project = FakeProject.Create();
         var reference = project.References[0];
@@ -26,7 +26,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Cambiar_a_un_tipo_de_la_misma_tecnologia_no_mueve_nada()
+    public void ChangeType_SameTechnology_KeepsOrder()
     {
         var project = FakeProject.Create();
         var w1 = FakeProject.Find(project, "W1");
@@ -36,7 +36,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Cambiar_de_tecnologia_lleva_la_feature_al_final_de_su_nuevo_bloque()
+    public void ChangeType_OtherTechnology_MovesToEndOfBlock()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Add(FakeProject.Make("MARCA2", 71, 50001));
@@ -47,7 +47,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Una_reserva_convertida_en_tipo_de_su_tecnologia_conserva_el_pointer()
+    public void ChangeType_ReserveToSameTechnology_KeepsPointer()
     {
         var project = FakeProject.Create();
         var reference = project.References[0];
@@ -63,7 +63,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Convertir_en_reserva_no_mueve_nada_y_borrar_desplaza_las_siguientes()
+    public void Delete_ToReserveOrRemove_ShiftsOnlyWhenRemoved()
     {
         var project = FakeProject.Create();
         var reference = project.References[0];
@@ -83,7 +83,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Anadir_reservas_las_pone_al_final_de_su_tecnologia_sin_mover_nada()
+    public void AddReserves_Technology_AppendsWithoutMoving()
     {
         var project = FakeProject.Create();
         var reference = project.References[0];
@@ -107,7 +107,7 @@ public class EditingTests
     [InlineData(1, "W1 W3 W2_01")]
     [InlineData(2, "W1 W2_01 W3")]
     [InlineData(9, "W1 W2_01 W3")]
-    public void Arrastrar_dentro_de_su_tecnologia(int position, string expected)
+    public void MoveInBlock_Position_ReordersWithinTechnology(int position, string expected)
     {
         var project = FakeProject.Create();
         var w3 = FakeProject.Find(project, "W3");
@@ -118,7 +118,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void Duplicar_referencia_copia_todo_con_otro_numero_y_otros_ids()
+    public void DuplicateReference_Always_CopiesWithNewNumberAndIds()
     {
         var project = FakeProject.Create();
         project.References[0].Features.Add(new Feature { ReserveTechnology = 3 });
@@ -134,7 +134,7 @@ public class EditingTests
     }
 
     [Fact]
-    public void No_se_duplica_por_encima_de_32_referencias()
+    public void DuplicateReference_AtMaximum_ReturnsNull()
     {
         var project = FakeProject.Create();
         for (var n = 2; n <= Reference.Max; n++)
@@ -153,6 +153,6 @@ public class EditingTests
     [InlineData("SEAM1", null)]
     [InlineData("DMC OP22", null)]
     [InlineData("", null)]
-    public void Propone_el_FeatureId(string client, long? expected) =>
+    public void Suggest_ClientName_ReturnsFeatureId(string client, long? expected) =>
         Assert.Equal(expected, FeatureIds.Suggest(client));
 }

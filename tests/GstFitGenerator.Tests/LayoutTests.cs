@@ -8,7 +8,7 @@ public class LayoutTests
         string.Join(" ", Layout.Rows(project).Select(r => $"{(r.Feature.IsReserve ? "R" : r.Feature.ClientReference)}={r.Offset}/{r.MainPointer}"));
 
     [Fact]
-    public void Agrupa_por_tecnologia_y_respeta_el_orden_de_la_lista()
+    public void Offsets_Features_GroupsByTechnologyInListOrder()
     {
         var project = FakeProject.Create();
 
@@ -16,7 +16,7 @@ public class LayoutTests
     }
 
     [Fact]
-    public void La_reserva_ocupa_su_pointer()
+    public void Offsets_Reserve_TakesItsPointer()
     {
         var project = FakeProject.Create();
         var reference = project.References[0];
@@ -26,7 +26,7 @@ public class LayoutTests
     }
 
     [Fact]
-    public void Un_tipo_sin_tecnologia_cuenta_como_tecnologia_0()
+    public void Offsets_TypeWithoutTechnology_UsesTechnologyZero()
     {
         var project = FakeProject.Create();
         project.TypeTechnologies.Remove(90);
@@ -35,7 +35,7 @@ public class LayoutTests
     }
 
     [Fact]
-    public void Avisa_de_los_offsets_que_cambian_desde_la_ultima_generacion()
+    public void ChangesSinceLastGeneration_MovedFeatures_ReturnsChanges()
     {
         var project = FakeProject.Create();
         project.LastOffsets = Layout.Offsets(project);

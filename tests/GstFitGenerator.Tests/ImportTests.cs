@@ -16,7 +16,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void La_revision_se_toma_tambien_de_v_al_final_del_nombre()
+    public void Revision_VersionSuffix_ReadsNumber()
     {
         Assert.Equal(2, TemplateImport.Revision("ABC_XYZ_FIT_20260115_v2"));
         Assert.Equal("ABC_XYZ", TemplateImport.ProjectName("ABC_XYZ_FIT_20260115_v2"));
@@ -24,7 +24,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void El_control_de_versiones_con_cabecera_en_ingles_se_importa()
+    public void Import_EnglishVersionHeader_ReadsVersions()
     {
         var project = FakeProject.Create();
         project.Versions.Add(new VersionEntry { Date = new DateOnly(2026, 1, 15), Description = "First version" });
@@ -39,7 +39,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void El_excel_FIT_se_importa_con_sus_features_utillajes_y_auxiliares()
+    public void Import_FitWorkbook_ReadsFeaturesAndAuxiliaries()
     {
         var project = FakeProject.Create();
         Editing.DuplicateReference(project, project.References[0]);
@@ -65,7 +65,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Del_excel_FIT_los_tipos_se_reconocen_sin_espacios_y_los_desconocidos_se_anaden()
+    public void Import_FitTypes_MatchesIgnoringSpaces()
     {
         var project = FakeProject.Create();
         using var book = ExcelWriters.Fit(project, FakeProject.Catalog());
@@ -85,7 +85,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Los_FeatureId_con_ceros_delante_se_conservan_al_importar_y_al_generar()
+    public void Import_LeadingZeroFeatureIds_KeepsDigits()
     {
         var project = FakeProject.Create();
         FakeProject.Find(project, "W1").FeatureId = 132;
@@ -106,7 +106,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Sin_ceros_delante_el_FeatureId_se_escribe_tal_cual()
+    public void Import_NoLeadingZeros_KeepsFeatureIdAsIs()
     {
         var project = FakeProject.Create();
         using var template = Reread(ExcelWriters.Template(project, FakeProject.Catalog()));
@@ -117,7 +117,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Un_libro_sin_hojas_PLC_Ref_ni_FIT_no_se_importa()
+    public void Import_NoKnownSheets_Throws()
     {
         using var book = new XLWorkbook();
         book.Worksheets.Add("Otra");
@@ -126,7 +126,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Las_referencias_importadas_sustituyen_a_las_del_mismo_numero_y_se_anaden_las_demas()
+    public void MergeReferences_SameNumber_ReplacesAndAddsOthers()
     {
         var target = FakeProject.Create();
         target.TypeTechnologies[1] = 5;
@@ -149,7 +149,7 @@ public class ImportTests
     }
 
     [Fact]
-    public void Las_referencias_que_no_caben_en_el_FB_no_se_importan()
+    public void MergeReferences_OverMaximum_SkipsExtra()
     {
         var target = new Project { References = Enumerable.Range(1, Reference.Max).Select(n => new Reference { Number = n }).ToList() };
         var imported = new Project { References = [new Reference { Number = 1, Features = [new Feature()] }, new Reference { Number = 40 }] };

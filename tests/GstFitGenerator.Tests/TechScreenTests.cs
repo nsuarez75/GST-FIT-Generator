@@ -17,7 +17,7 @@ public class TechScreenTests
         string.Join(" | ", page.Boxes.Select(b => b.Title + ": " + string.Join(", ", b.Rows.Select(r => r.Text))));
 
     [Fact]
-    public void Un_recuadro_por_fixture_con_las_features_de_su_asset()
+    public void Plan_Fixtures_OneBoxEach()
     {
         var plan = TechScreens.Plan(WithStart());
 
@@ -30,7 +30,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Las_columnas_van_por_asset_ordenadas_por_nombre()
+    public void Plan_Assets_ColumnsInNaturalOrder()
     {
         var project = WithStart();
         var features = project.References[0].Features;
@@ -44,7 +44,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Los_nombres_cortos_cambian_titulos_y_textos()
+    public void Plan_ShortNames_ChangesTitlesAndTexts()
     {
         var project = WithStart();
         project.TechScreens.ShortNames["1000FIX01"] = "OP10";
@@ -57,7 +57,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Sin_tecnologia_no_sale_y_sin_fixture_va_aparte_con_aviso()
+    public void Plan_MissingTechnologyOrFixture_SkipsOrWarns()
     {
         var project = WithStart();
         var features = project.References[0].Features;
@@ -72,7 +72,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Las_variables_del_faceplate_salen_del_layout()
+    public void Plan_Faceplate_TakesVariablesFromLayout()
     {
         var plan = TechScreens.Plan(WithStart());
 
@@ -82,7 +82,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Una_columna_larga_sigue_al_lado()
+    public void Plan_LongColumn_ContinuesBeside()
     {
         var project = WithStart();
         for (var i = 0; i < TechScreens.RowsPerColumn(new TechScreenStyle()) + 5; i++)
@@ -97,7 +97,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Si_no_cabe_la_referencia_siguiente_se_corre_y_avisa()
+    public void Plan_ReferenceDoesNotFit_ShiftsAndWarns()
     {
         var project = WithStart(1, 7);
         var second = Storage.Clone(project.References[0]);
@@ -123,7 +123,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Si_se_pasa_de_la_24_es_un_error()
+    public void Plan_PastScreen24_ReturnsError()
     {
         var plan = TechScreens.Plan(WithStart(1, 24));
         Assert.Empty(plan.Errors);
@@ -141,7 +141,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Las_reservas_solo_salen_con_pantalla_de_inicio()
+    public void Plan_Reserves_OnlyWithStartScreen()
     {
         var project = WithStart();
         project.References[0].Features.Add(new Feature { ReserveTechnology = 2 });
@@ -157,7 +157,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Rellena_solo_las_descripciones_vacias()
+    public void FillDescriptions_EmptyOnes_FillsOnlyThose()
     {
         var project = WithStart();
         project.TechScreens.ReservesStart = 9;
@@ -172,7 +172,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void El_xml_lleva_nombre_numero_subtitulo_y_faceplates()
+    public void Xml_Page_HasNameNumberSubtitleAndFaceplates()
     {
         var project = WithStart();
         var plan = TechScreens.Plan(project);
@@ -203,7 +203,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Los_botones_enlazan_pantallas_de_la_misma_referencia()
+    public void Xml_SeveralPages_ButtonsLinkSameReference()
     {
         var project = WithStart();
         for (var f = 0; f < 60; f++)
@@ -224,7 +224,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Generar_escribe_las_pantallas_en_su_subcarpeta()
+    public void Run_TechScreens_WritesInSubfolder()
     {
         var project = WithStart();
         var folder = Path.Combine(Path.GetTempPath(), "gstfit-test-" + Guid.NewGuid().ToString("N"));
@@ -244,7 +244,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Orden_natural_de_nombres()
+    public void NaturalComparer_NumberedNames_SortsNaturally()
     {
         Assert.Equal(["5000R1", "5000R2", "5000R10"], new[] { "5000R10", "5000R2", "5000R1" }.Order(NaturalComparer.Instance));
     }
@@ -261,7 +261,7 @@ public class TechScreenTests
             .Descendants("Value").Single().Element("Name")!.Value;
 
     [Fact]
-    public void El_estilo_cambia_colores_letras_y_separaciones()
+    public void Xml_CustomStyle_UsesColorsFontsAndSpacing()
     {
         var project = WithStart();
         var style = project.TechScreens.Style;
@@ -284,7 +284,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Un_estilo_fuera_de_rango_se_ajusta()
+    public void Clamp_StyleOutOfRange_AdjustsValues()
     {
         var project = WithStart();
         project.TechScreens.Style.RowHeight = 10;
@@ -296,7 +296,7 @@ public class TechScreenTests
     }
 
     [Fact]
-    public void Un_proyecto_sin_estilo_guardado_usa_el_de_por_defecto()
+    public void FromJson_NoStyle_UsesDefault()
     {
         var project = Storage.FromJson<Project>("""{ "name": "X", "techScreens": { "referenceStarts": { "1": 7 } } }""");
 

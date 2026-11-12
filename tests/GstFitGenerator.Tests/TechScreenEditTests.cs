@@ -24,7 +24,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Mover_lo_deja_en_su_sitio_ajustado_a_la_rejilla_y_los_demas_se_apartan()
+    public void Move_Box_SnapsToGridAndPushesOthers()
     {
         var project = Project();
         var (page, box) = Find(project, "3000FIX01");
@@ -41,7 +41,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Se_puede_mandar_a_una_pantalla_nueva()
+    public void ToScreen_NewScreen_MovesBox()
     {
         var project = Project();
         var (page, box) = Find(project, "4000FIX01");
@@ -55,7 +55,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Filas_por_columna_cambia_la_forma_del_recuadro()
+    public void SetRows_RowsPerColumn_ReshapesBox()
     {
         var project = Project();
         var (page, box) = Find(project, "1000FIX01");
@@ -70,7 +70,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Partir_entre_assets_crea_una_parte_que_se_mueve_sola()
+    public void Split_BetweenAssets_CreatesMovablePart()
     {
         var project = Project();
         var (page, box) = Find(project, "1000FIX01");
@@ -90,7 +90,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Si_el_fixture_cambia_de_nombre_el_retoque_sigue_con_sus_features()
+    public void Apply_FixtureRenamed_KeepsEditByFeatures()
     {
         var project = Project();
         var (page, box) = Find(project, "3000FIX01");
@@ -105,7 +105,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Un_retoque_sin_recuadro_avisa_y_no_se_aplica()
+    public void Apply_EditWithoutBox_WarnsAndSkips()
     {
         var project = Project();
         var (page, box) = Find(project, "4000FIX01");
@@ -117,7 +117,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Avisa_si_un_recuadro_movido_pisa_a_otro_o_se_sale_del_lienzo()
+    public void Apply_OverlapOrOutside_Warns()
     {
         // Los automáticos se apartan solos: solo dos movidos a mano pueden pisarse.
         var project = Project();
@@ -134,7 +134,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Colocacion_automatica_quita_los_retoques()
+    public void AutoPlace_EditedBox_RemovesEdits()
     {
         var project = Project();
         var auto = Find(project, "3000FIX01").Box;
@@ -150,7 +150,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void Cambiar_el_tamano_escala_todo_el_recuadro_y_su_xml()
+    public void Resize_Scale_ScalesBoxAndXml()
     {
         var project = Project();
         var (page, box) = Find(project, "1000FIX01");
@@ -176,7 +176,7 @@ public class TechScreenEditTests
     }
 
     [Fact]
-    public void El_lienzo_y_el_faceplate_cambian_la_colocacion_y_el_xml()
+    public void Plan_CanvasAndFaceplateSize_ChangesLayoutAndXml()
     {
         var project = Project();
         project.TechScreens.Style.MarginLeft = 200;
