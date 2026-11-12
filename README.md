@@ -1,8 +1,8 @@
 # GST-FIT-Generator
 
-Aplicación de escritorio para crear dentro de la propia app los datos del FIT de una pieza (proyectos, referencias, features, tipos de feature, tecnologías, locations y pantallas de trazabilidad) y, a partir de ellos, generar lo mismo que GeneradorFIT: el Excel FIT para la plataforma I4 de GESTAMP y el código de PLC (TIA Portal) del estándar SICAR@GST. Sustituye a la plantilla Excel que antes se rellenaba a mano.
+Aplicación de escritorio para crear dentro de la propia app los datos del FIT de una pieza (proyectos, referencias, features, tipos de feature, tecnologías, locations y pantallas de trazabilidad) y, a partir de ellos, generar el Excel FIT para la plataforma I4 de GESTAMP y el código de PLC (TIA Portal) del estándar SICAR@GST. Sustituye a la plantilla Excel que antes se rellenaba a mano.
 
-> Estado: versión 0.4.1 publicada en [Releases](https://github.com/nsuarez75/GST-FIT-Generator/releases), con ejecutables de Windows y Linux. Probada con la plantilla real y en TIA (fuentes de PLC y pantallas de techs).
+> Estado: versión 0.4.1 publicada en [Releases](https://github.com/nsuarez75/GST-FIT-Generator/releases), con ejecutable de Windows. Probada con la plantilla real y en TIA (fuentes de PLC y pantallas de techs).
 
 ## Uso
 
@@ -24,11 +24,11 @@ El proyecto se guarda en un archivo `.fitproj` (Guardar como sirve para exportar
 ## Estructura
 
 - `src/GstFitGenerator.Core`: modelo del proyecto, cálculo de pointers y offsets, edición, tamaños, avisos, generación (plantilla, FIT y código de PLC) e importación de plantillas. Sin dependencias de interfaz.
-- `src/GstFitGenerator.App`: la aplicación (Avalonia), con el estándar de interfaz de GST-LoS-Generator.
+- `src/GstFitGenerator.App`: la aplicación (Avalonia).
 - `tests/GstFitGenerator.Tests`: tests del núcleo con datos inventados.
 - `tests/GstFitGenerator.App.Tests`: tests de la interfaz sin pantalla. Con la variable `GST_SCREENSHOTS` apuntando a una carpeta, dejan ahí capturas de todas las pantallas.
 
-Con la plantilla real de ejemplo, el núcleo genera el FIT, `User_TableInfo_DB`, `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus SCL exactamente iguales que GeneradorFIT V3.0.1.
+Probado con la plantilla real de ejemplo: el FIT, `User_TableInfo_DB`, `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus SCL salen correctos.
 
 ## Datos de ejemplo
 
