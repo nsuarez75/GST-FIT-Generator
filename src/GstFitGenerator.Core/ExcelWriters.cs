@@ -1,4 +1,4 @@
-// Excel generados: el FIT para la plataforma I4 (igual que GeneradorFIT V3.0.1) y la plantilla completa,
+// Excel generados: el FIT para la plataforma I4 y la plantilla completa,
 // que antes se rellenaba a mano (hojas Control Versiones, PLC-RefN, PLC-Aux, Screens Names y Feature Type Table).
 // Los títulos de hojas y columnas son los de siempre y no cambian con el idioma de la app.
 using System.Globalization;

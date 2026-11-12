@@ -7,14 +7,12 @@ Acordada en la entrevista del 2026-10-27. El vocabulario está en `GLOSSARY.md`.
 App de escritorio en .NET 10 con Avalonia donde se crean los datos del FIT de una pieza (proyecto, referencias, features, tecnologías, locations, auxiliares, Screen Names y control de versiones) y que, a partir de ellos, genera:
 
 - La **plantilla Excel** que hasta ahora se rellenaba a mano, con todas sus hojas y las columnas calculadas (V-Z y AD-AK).
-- Todo lo que generaba GeneradorFIT V3.0.1 a partir de esa plantilla: el **Excel FIT** para la plataforma I4 de GESTAMP, `User_TableInfo_DB.db`, `User_Config_Reference_FB.awl`, `CheckTechTemplate_DB.db` y los `CheckTechTemplate_DB_Init_<fixture>.scl`.
-
-GeneradorFIT queda en desuso, congelado en la V3.0.1.
+- A partir de esos datos: el **Excel FIT** para la plataforma I4 de GESTAMP, `User_TableInfo_DB.db`, `User_Config_Reference_FB.awl`, `CheckTechTemplate_DB.db` y los `CheckTechTemplate_DB_Init_<fixture>.scl`.
 
 ## Interfaz
 
-- Sigue el estándar de interfaz de las apps nuevas, tomado de GST-LoS-Generator: mismo estilo, barra superior con iconos, tema claro, oscuro o según el sistema, idioma castellano o inglés, aviso de versión nueva, deshacer y rehacer, y aviso al cerrar con cambios sin guardar.
-- Ejecutables para Windows y Linux.
+- Interfaz: barra superior con iconos, tema claro, oscuro o según el sistema, idioma castellano o inglés, aviso de versión nueva, deshacer y rehacer, y aviso al cerrar con cambios sin guardar.
+- Ejecutable para Windows.
 - Panel izquierdo con el árbol del proyecto: datos del proyecto, tecnologías, locations, referencias, auxiliares, pantallas (un solo menú con Screen Names y Pantallas de techs), control de versiones y tamaños.
 
 ## Archivos
@@ -134,13 +132,13 @@ Acordado en la entrevista del 2026-10-28.
 
 ## Generar
 
-- Casillas para elegir qué se genera: las mismas que en GeneradorFIT, más «Plantilla Excel» y «Pantallas de trazabilidad (XML)».
-- Plantilla Excel: una hoja `PLC-RefN` por referencia, con los grupos de fixture seguidos (solo los que usa esa referencia, al menos uno, desplazando las columnas siguientes; #49), V-Z (Feature Type, Tech, Pointer, Main Pointer, Offset) y AD-AK (las cuatro listas para el HMI) en la plantilla de siempre, con 4 grupos. Además lleva las hojas `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`. No hace falta que GeneradorFIT V3 pueda leerla.
-- Excel FIT, `User_TableInfo_DB` (`TableInfo_1…N`, una tabla por cada columna de fixture usada), `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus init SCL: igual que GeneradorFIT V3.0.1, salvo que el número de tecnología se escribe siempre con 2 cifras (`Tech02`, `Tech10`).
+- Casillas para elegir qué se genera: Plantilla Excel, Excel FIT, `User_TableInfo_DB`, `User_Config_Reference_FB`, `CheckTechTemplate_DB` y Pantallas de trazabilidad (XML).
+- Plantilla Excel: una hoja `PLC-RefN` por referencia, con los grupos de fixture seguidos (solo los que usa esa referencia, al menos uno, desplazando las columnas siguientes; #49), V-Z (Feature Type, Tech, Pointer, Main Pointer, Offset) y AD-AK (las cuatro listas para el HMI) en la plantilla de siempre, con 4 grupos. Además lleva las hojas `PLC-Aux`, `Screens Names`, `Feature Type Table` y `Control Versiones`.
+- Excel FIT, `User_TableInfo_DB` (`TableInfo_1…N`, una tabla por cada columna de fixture usada), `User_Config_Reference_FB` y `CheckTechTemplate_DB` con sus init SCL: el número de tecnología se escribe siempre con 2 cifras (`Tech02`, `Tech10`).
 
 ## Decisiones técnicas
 
 - Solución .NET 10: `GstFitGenerator.Core` (modelo, cálculo, lectura y escritura) con tests, y `GstFitGenerator.App` (Avalonia).
-- Los tests comprueban que, con los mismos datos, lo generado coincide con GeneradorFIT V3.0.1. Los datos de prueba son inventados.
+- Los tests comprueban lo generado con datos de prueba inventados.
 - Lo que se guarda en el proyecto es el orden de las features; los pointers se calculan a partir de él. Para poder comparar, se guardan los offsets de la última generación.
 - `./checks.sh` compila con los avisos como errores y pasa los tests.

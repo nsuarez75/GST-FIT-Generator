@@ -1,4 +1,4 @@
-// Código de PLC (fuentes externas de TIA Portal), igual que lo generaba GeneradorFIT V3.0.1:
+// Código de PLC (fuentes externas de TIA Portal):
 //   User_TableInfo_DB.db, User_Config_Reference_FB.awl, CheckTechTemplate_DB.db y CheckTechTemplate_DB_Init_<fixture>.scl.
 // Diferencias con la V3: el número de tecnología siempre lleva 2 cifras en el FB (Tech10, no Tech010), hay tantas
 // TableInfo como columnas de fixture y las features de tecnología 0 (No technology) no van al FB ni a CheckTechTemplate,

@@ -2,7 +2,7 @@
 
 Vocabulario del proyecto. Se completa durante la entrevista inicial.
 
-- **FIT**: documento Excel con todas las features de una pieza para la plataforma I4 de GESTAMP. Hasta ahora lo generaba GeneradorFIT a partir de una plantilla Excel rellenada a mano; esta app crea esos datos desde la propia app.
+- **FIT**: documento Excel con todas las features de una pieza para la plataforma I4 de GESTAMP. Esta app crea sus datos desde la propia app.
 - **Proyecto**: conjunto de trabajo de la app; tiene un nombre (p. ej. `ABC_XYZ`, da nombre a los Excel generados), una planta, una línea y una o más referencias (máximo 32).
 - **Auxiliar**: feature que no pertenece a ninguna referencia (botoneras, HMIs), con Asset, Working y FeatureId (hoja `PLC-Aux`). Sale en el FIT con PartReference 99 y al final de cada `TableInfo`; no cuenta para pointers.
 - **Tamaños**: número de features más reservas de cada referencia y tecnología; es el valor de las constantes `TechNN_Ref_MM` de TIA que dimensionan los arrays.
