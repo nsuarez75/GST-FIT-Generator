@@ -5,7 +5,7 @@ namespace GstFitGenerator.Tests;
 public class PasteTests
 {
     [Fact]
-    public void Filas_con_el_orden_de_la_tabla()
+    public void Parse_TableOrder_ReadsRows()
     {
         var text = "FeatureReferenceClient\tTipo\tLocation\tFeatureId\tCritical\r\n" +
                    "W7\t1\t2\t10007\tFalse\t1000FIX01\t1000R1\t1\t1000FIX02\t1000R2\t2\r\n" +
@@ -22,7 +22,7 @@ public class PasteTests
     }
 
     [Fact]
-    public void Filas_copiadas_de_una_plantilla()
+    public void Parse_TemplateRows_ReadsRows()
     {
         var cells = new string[22];
         Array.Fill(cells, "");
@@ -38,5 +38,5 @@ public class PasteTests
     }
 
     [Fact]
-    public void Texto_vacio_no_crea_nada() => Assert.Empty(Paste.Parse("\r\n  \n"));
+    public void Parse_EmptyText_ReturnsNothing() => Assert.Empty(Paste.Parse("\r\n  \n"));
 }

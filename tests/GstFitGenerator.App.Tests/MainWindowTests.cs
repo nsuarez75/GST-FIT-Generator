@@ -79,7 +79,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Importar_la_plantilla_crea_el_proyecto()
+    public async Task ImportTemplate_Workbook_CreatesProject()
     {
         var (window, main, dialogs) = await Open();
 
@@ -96,7 +96,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Importar_referencias_de_un_excel_FIT_las_lleva_al_proyecto_abierto_y_se_puede_deshacer()
+    public async Task ImportReferences_FitWorkbook_AddsToProjectAndUndoes()
     {
         var (_, main, dialogs) = await Open();
         var other = FakeProject.Create();
@@ -126,7 +126,7 @@ public sealed class MainWindowTests : IDisposable
     [InlineData(AppSettings.ThemeLight, L.Spanish, 1400)]
     [InlineData(AppSettings.ThemeDark, L.English, 1400)]
     [InlineData(AppSettings.ThemeLight, L.Spanish, 900)]
-    public async Task Todas_las_pantallas_se_dibujan(string theme, string language, double width)
+    public async Task Render_AllScreens_DrawsWithoutErrors(string theme, string language, double width)
     {
         L.Language = language;
         App.ApplyTheme(theme);
@@ -161,7 +161,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Anadir_una_feature_propone_el_FeatureId_y_se_puede_deshacer()
+    public async Task AddFeature_Selection_SuggestsFeatureIdAndUndoes()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main);
@@ -184,7 +184,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Cambiar_de_tecnologia_avisa_y_lleva_la_feature_al_final_de_su_bloque()
+    public async Task ChangeType_OtherTechnology_ConfirmsAndMoves()
     {
         var (_, main, dialogs) = await Open();
         var reference = ShowReference(main);
@@ -199,7 +199,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Cancelar_el_cambio_de_tecnologia_no_mueve_nada()
+    public async Task ChangeType_Cancelled_KeepsOrder()
     {
         var (_, main, dialogs) = await Open();
         dialogs.ConfirmAnswer = false;
@@ -213,7 +213,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Eliminar_ofrece_convertir_en_reserva_o_borrar()
+    public async Task Delete_Feature_OffersReserveOrDelete()
     {
         var (_, main, dialogs) = await Open();
         var reference = ShowReference(main);
@@ -232,7 +232,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Arrastrar_y_los_botones_mueven_dentro_de_la_tecnologia()
+    public async Task Drop_RowAndButtons_MoveWithinTechnology()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main);
@@ -250,7 +250,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Anadir_y_quitar_no_rehacen_la_lista()
+    public async Task AddAndDelete_Rows_KeepsList()
     {
         var (_, main, dialogs) = await Open();
         var reference = ShowReference(main);
@@ -285,7 +285,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Deshacer_se_queda_en_la_misma_posicion()
+    public async Task Undo_ScrolledList_KeepsPosition()
     {
         var (window, main, _) = await Open(height: 520);
         var reference = ShowReference(main);
@@ -318,7 +318,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Expandir_una_tecnologia_con_muchas_features_es_rapido()
+    public async Task Expand_ManyFeatures_IsFast()
     {
         var (_, main, _) = await Open();
         var features = main.Session.Project.References[0].Features;
@@ -356,7 +356,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task La_lista_siempre_queda_en_el_orden_de_la_referencia()
+    public async Task Items_AfterChanges_FollowReferenceOrder()
     {
         var (_, main, dialogs) = await Open();
         dialogs.DeleteAnswer = DeleteChoice.Delete;
@@ -404,7 +404,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Contraer_una_tecnologia_oculta_sus_filas_y_se_recuerda()
+    public async Task Collapse_Technology_HidesRowsAndRemembers()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main);
@@ -434,7 +434,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Al_arrastrar_se_ve_donde_caera_la_fila()
+    public async Task Drag_Row_ShowsDropLine()
     {
         var (window, main, _) = await Open();
         var reference = ShowReference(main);
@@ -465,7 +465,7 @@ public sealed class MainWindowTests : IDisposable
     [AvaloniaTheory]
     [InlineData(1400)]
     [InlineData(900)]
-    public async Task Un_tipo_largo_no_descuadra_las_columnas(double width)
+    public async Task Render_LongTypeName_KeepsColumns(double width)
     {
         var (window, main, _) = await Open(width);
         main.Session.Catalog.Types.First(t => t.Number == 2).Detail = string.Concat(Enumerable.Repeat(" texto muy largo del tipo", 12));
@@ -489,7 +489,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Anadir_reservas_desde_la_cabecera_y_desde_el_menu()
+    public async Task AddReserves_HeaderAndMenu_AppendsReserves()
     {
         var (window, main, dialogs) = await Open();
         var reference = ShowReference(main);
@@ -526,7 +526,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Solo_se_puede_soltar_en_la_misma_tecnologia()
+    public async Task CanDrop_OtherTechnology_ReturnsFalse()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main);
@@ -537,7 +537,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Pegar_filas_del_portapapeles()
+    public async Task Paste_ClipboardRows_AddsFeatures()
     {
         var (_, main, dialogs) = await Open();
         var reference = ShowReference(main);
@@ -552,7 +552,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Duplicar_referencia_la_abre()
+    public async Task Duplicate_Reference_OpensCopy()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main);
@@ -565,7 +565,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Tamanos_copia_las_constantes()
+    public async Task CopyConstants_Sizes_CopiesToClipboard()
     {
         var (_, main, dialogs) = await Open();
         main.SelectedNode = main.FindNode(NavKind.Sizes);
@@ -578,7 +578,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Generar_escribe_los_archivos_y_anade_la_version()
+    public async Task Generate_SelectedOutputs_WritesFilesAndAddsVersion()
     {
         var (_, main, dialogs) = await Open();
         var output = Path.Combine(_dir, "salida");
@@ -606,7 +606,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Guardar_y_abrir_el_proyecto()
+    public async Task SaveAndOpen_Project_RoundTrips()
     {
         var (_, main, dialogs) = await Open();
         var path = Path.Combine(_dir, "PRUEBA.fitproj");
@@ -625,7 +625,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Los_avisos_llevan_a_la_feature()
+    public async Task OpenWarning_FeatureWarning_SelectsFeature()
     {
         var (_, main, _) = await Open();
         var reference = ShowReference(main, 2);
@@ -641,7 +641,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Pantallas_de_techs_reparto_nombres_cortos_y_deshacer()
+    public async Task TechScreens_PlanAndShortNames_UpdatesAndUndoes()
     {
         var (_, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.TechScreens);
@@ -663,7 +663,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Pantallas_de_techs_mover_recuadros_y_deshacer()
+    public async Task TechScreens_MoveBox_UpdatesAndUndoes()
     {
         var (window, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.TechScreens);
@@ -692,7 +692,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Elegir_otro_recuadro_no_lo_mueve_de_pantalla()
+    public async Task TechScreens_SelectOtherBox_KeepsScreen()
     {
         var (_, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.TechScreens);
@@ -731,7 +731,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Pantallas_de_techs_cambiar_el_tamano_de_un_recuadro()
+    public async Task TechScreens_ResizeBox_ScalesBox()
     {
         var (window, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.TechScreens);
@@ -753,7 +753,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task La_ficha_sale_cerrada_al_abrir_una_referencia()
+    public async Task OpenReference_Always_FormClosed()
     {
         var (_, main, _) = await Open();
 
@@ -766,7 +766,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Un_solo_menu_de_pantallas_con_screen_names_y_techs()
+    public async Task NavTree_Screens_OneGroupWithBoth()
     {
         var (_, main, _) = await Open();
 
@@ -779,7 +779,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Pantallas_de_techs_estilo_y_restaurar()
+    public async Task TechScreens_StyleAndRestore_AppliesAndResets()
     {
         var (window, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.TechScreens);
@@ -803,7 +803,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Tecnologia_de_un_tipo_y_nombre_de_la_tecnologia()
+    public async Task Technologies_TypeAndName_UpdatesProject()
     {
         var (_, main, _) = await Open();
         main.SelectedNode = main.FindNode(NavKind.Technologies);
@@ -820,7 +820,7 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Acerca_de_y_version_nueva()
+    public async Task About_NewVersion_ShowsInfoAndNotice()
     {
         var (window, main, dialogs) = await Open();
 
