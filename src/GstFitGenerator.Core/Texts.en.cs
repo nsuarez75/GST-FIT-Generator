@@ -93,7 +93,7 @@ public static partial class L
         ["Quitar referencia…"] = "Remove reference…",
         ["¿Quitar la referencia {0} con sus {1} features?"] = "Remove reference {0} with its {1} features?",
         ["Quitar"] = "Remove",
-        ["Creado por Ignacio Suarez."] = "Created by Ignacio Suarez.",
+        ["{0}, versión {1}.\nCreado por Ignacio Suarez (Alomatek)."] = "{0}, version {1}.\nMade by Ignacio Suarez (Alomatek).",
         ["Hay una versión nueva: {0} (tienes la {1})."] = "A new version is available: {0} (you have {1}).",
 
         // ---- Diálogos
