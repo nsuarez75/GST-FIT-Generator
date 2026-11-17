@@ -31,6 +31,7 @@ public sealed partial class ReferenceViewModel : EditableViewModel
             host.ExpandedTechnologies[reference.Number] = expanded;
         }
         _expanded = expanded;
+        ShowForm = host.ShowFeatureForm;
         TypeOptions = TypeOption.All(Session.Project, Session.Catalog);
         LocationOptions = LocationOption.All(Session.Project);
         Refresh();
@@ -45,9 +46,12 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     public bool HasSelection => Selected is not null;
 
-    // Ficha de la derecha: cerrada al abrir la referencia; se abre al hacer doble clic en una fila o con el botón.
+    // Ficha de la derecha: se abre al hacer doble clic en una fila o con el botón. Al abrir la referencia queda como
+    // estaba en la última que se vio (cerrada la primera vez).
     [ObservableProperty]
     public partial bool ShowForm { get; set; }
+
+    partial void OnShowFormChanged(bool value) => _host.ShowFeatureForm = value;
 
     // Lo que selecciona la lista; las cabeceras de bloque no se pueden seleccionar.
     public object? SelectedItem

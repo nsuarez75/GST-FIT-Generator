@@ -55,6 +55,7 @@ App de escritorio en .NET 10 con Avalonia donde se crean los datos del FIT de un
 - **Los pointers nunca cambian solos.** Solo cambian cuando el usuario intercala, arrastra o borra una feature.
 - La tabla muestra un bloque por tecnología, con el pointer y el offset visibles en todo momento. Las features se reordenan arrastrándolas dentro de su bloque; para pasar una a otra tecnología se le cambia el tipo.
 - Al abrir una referencia, todas sus tecnologías salen plegadas: solo se ven las cabeceras con sus posiciones y reservas. Cada tecnología se pliega o despliega desde su cabecera, y todas a la vez con el botón de la barra. Mientras la app está abierta, cada referencia recuerda qué tecnologías se han desplegado; al abrir otro proyecto se empieza de nuevo con todo plegado. Ir a una feature (desde un aviso, al añadirla o al cambiarla de tecnología) despliega su tecnología.
+- La ficha de la derecha (todos los campos y utillajes de la feature seleccionada) se abre con doble clic en una fila o con su botón. Al cambiar de referencia queda como estaba en la última: abierta o cerrada. La primera vez sale cerrada.
 - Al cambiar el tipo de una feature a otra tecnología, la feature pasa al final del bloque de esa tecnología y la app avisa de que se desplazan pointers.
 - Al borrar una feature, la app pregunta: «Convertir en reserva (no se mueve nada)» (opción por defecto) o «Borrar del todo (se desplazan N features)».
 - Al generar, si algún offset ha cambiado desde la última generación, la app enseña la lista de cambios antes de escribir los archivos.
