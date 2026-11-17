@@ -84,6 +84,10 @@ public sealed partial class MainViewModel : ObservableObject
     // plegadas, así que una referencia que no se ha abierto todavía sale con todas plegadas. Solo mientras la app está abierta.
     public Dictionary<int, HashSet<int>> ExpandedTechnologies { get; } = [];
 
+    // Si la ficha de la feature estaba abierta en la última referencia que se vio; la siguiente sale igual.
+    // Solo mientras la app está abierta.
+    public bool ShowFeatureForm { get; set; }
+
     // Editor de referencia que había antes de rehacer el árbol (deshacer, rehacer), para que el nuevo siga en su sitio.
     private ReferenceViewModel? _previousReference;
 

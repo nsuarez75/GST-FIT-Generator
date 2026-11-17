@@ -819,15 +819,23 @@ public sealed class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task OpenReference_Always_FormClosed()
+    public async Task SwitchReference_Form_KeepsLastState()
     {
         var (_, main, _) = await Open();
 
+        // La primera referencia sale con la ficha cerrada.
         var reference = ShowReference(main);
         Assert.False(reference.ShowForm);
 
+        // Abierta en una, sale abierta en la siguiente (también al pasar por otra vista).
         reference.ToggleFormCommand.Execute(null);
-        Assert.True(reference.ShowForm);
+        var second = ShowReference(main, 2);
+        Assert.True(second.ShowForm);
+        main.SelectedNode = main.FindNode(NavKind.Project);
+        Assert.True(ShowReference(main).ShowForm);
+
+        // Cerrada, sale cerrada.
+        Assert.IsType<ReferenceViewModel>(main.Editor).ToggleFormCommand.Execute(null);
         Assert.False(ShowReference(main, 2).ShowForm);
     }
 
