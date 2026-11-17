@@ -11,8 +11,9 @@ namespace GstFitGenerator.App.ViewModels;
 public sealed partial class ReferenceViewModel : EditableViewModel
 {
     private readonly MainViewModel _host;
-    // Tecnologías contraídas de esta referencia. Viven en MainViewModel para no perderlas al cambiar de vista o deshacer.
-    private readonly HashSet<int> _collapsed;
+    // Tecnologías desplegadas de esta referencia; las demás salen plegadas. Viven en MainViewModel para no perderlas al
+    // cambiar de referencia o de vista, o al deshacer.
+    private readonly HashSet<int> _expanded;
 
     public Reference Reference { get; }
     // Cabeceras de bloque (BlockHeaderViewModel) y filas (FeatureRowViewModel), en orden.
@@ -24,12 +25,12 @@ public sealed partial class ReferenceViewModel : EditableViewModel
     {
         _host = host;
         Reference = reference;
-        if (!host.CollapsedTechnologies.TryGetValue(reference.Number, out var collapsed))
+        if (!host.ExpandedTechnologies.TryGetValue(reference.Number, out var expanded))
         {
-            collapsed = [];
-            host.CollapsedTechnologies[reference.Number] = collapsed;
+            expanded = [];
+            host.ExpandedTechnologies[reference.Number] = expanded;
         }
-        _collapsed = collapsed;
+        _expanded = expanded;
         TypeOptions = TypeOption.All(Session.Project, Session.Catalog);
         LocationOptions = LocationOption.All(Session.Project);
         Refresh();
@@ -66,13 +67,13 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     // Pone la tabla al día (después de añadir, mover, borrar o cambiar de tecnología) sin vaciarla: se reutilizan las
     // filas que siguen ahí, así la lista no vuelve arriba y se conserva la selección. Si se pide seleccionar una
-    // feature de una tecnología contraída, se expande para que se vea.
+    // feature de una tecnología plegada, se despliega para que se vea.
     public void Refresh(Feature? select = null)
     {
         var rows = Layout.Rows(Session.Project, Reference);
         if (select is not null && rows.FirstOrDefault(r => r.Feature == select) is { } shown)
         {
-            _collapsed.Remove(shown.Technology);
+            _expanded.Add(shown.Technology);
         }
         select ??= Selected?.Feature;
         var headers = Items.OfType<BlockHeaderViewModel>().ToDictionary(h => h.Technology);
@@ -85,7 +86,7 @@ public sealed partial class ReferenceViewModel : EditableViewModel
             {
                 header = new BlockHeaderViewModel(this, block.Key);
             }
-            header.Update(Session.Project.TechnologyName(block.Key), block.Count(), block.Count(r => r.Feature.IsReserve), !_collapsed.Contains(block.Key));
+            header.Update(Session.Project.TechnologyName(block.Key), block.Count(), block.Count(r => r.Feature.IsReserve), _expanded.Contains(block.Key));
             items.Add(header);
             if (!header.IsExpanded)
             {
@@ -219,9 +220,9 @@ public sealed partial class ReferenceViewModel : EditableViewModel
 
     public void Toggle(int technology)
     {
-        if (!_collapsed.Remove(technology))
+        if (!_expanded.Remove(technology))
         {
-            _collapsed.Add(technology);
+            _expanded.Add(technology);
         }
         Refresh();
     }
@@ -232,11 +233,11 @@ public sealed partial class ReferenceViewModel : EditableViewModel
     {
         if (AllCollapsed)
         {
-            _collapsed.Clear();
+            _expanded.UnionWith(Items.OfType<BlockHeaderViewModel>().Select(h => h.Technology));
         }
         else
         {
-            _collapsed.UnionWith(Items.OfType<BlockHeaderViewModel>().Select(h => h.Technology));
+            _expanded.Clear();
         }
         Refresh();
     }
@@ -479,7 +480,7 @@ public sealed partial class BlockHeaderViewModel(ReferenceViewModel owner, int t
     public partial string Detail { get; private set; } = "";
 
     [ObservableProperty]
-    public partial bool IsExpanded { get; private set; } = true;
+    public partial bool IsExpanded { get; private set; }
 
     public void Update(string name, int count, int reserves, bool expanded)
     {

@@ -29,6 +29,8 @@ public sealed class Session
     public event Action? Changed;
     // El proyecto o el catálogo se han sustituido entero (abrir, deshacer...): hay que rehacer las vistas.
     public event Action? Reset;
+    // Se ha pasado a otro proyecto (nuevo, abierto o importado), no a otra versión del mismo. Salta antes que Reset.
+    public event Action? ProjectReplaced;
 
     public Session(string catalogPath)
     {
@@ -101,6 +103,7 @@ public sealed class Session
         ProjectPath = null;
         Dirty = false;
         ClearHistory();
+        ProjectReplaced?.Invoke();
         Reset?.Invoke();
     }
 
@@ -110,6 +113,7 @@ public sealed class Session
         ProjectPath = path;
         Dirty = false;
         ClearHistory();
+        ProjectReplaced?.Invoke();
         Reset?.Invoke();
     }
 
@@ -121,6 +125,7 @@ public sealed class Session
         ProjectPath = null;
         Dirty = true;
         ClearHistory();
+        ProjectReplaced?.Invoke();
         Reset?.Invoke();
         Changed?.Invoke();
     }
