@@ -50,11 +50,27 @@ public sealed class MainWindowTests : IDisposable
         return (window, main, dialogs);
     }
 
-    private static ReferenceViewModel ShowReference(MainViewModel main, int number = 1)
+    // Abre la referencia. Salvo que se pida lo contrario, despliega todas sus tecnologías (salen plegadas) para que
+    // las filas estén en la lista.
+    private static ReferenceViewModel ShowReference(MainViewModel main, int number = 1, bool expandAll = true)
     {
         main.SelectedNode = main.FindNode(NavKind.Reference, number);
         Dispatcher.UIThread.RunJobs();
-        return Assert.IsType<ReferenceViewModel>(main.Editor);
+        var reference = Assert.IsType<ReferenceViewModel>(main.Editor);
+        if (expandAll)
+        {
+            ExpandAll(reference);
+        }
+        return reference;
+    }
+
+    private static void ExpandAll(ReferenceViewModel reference)
+    {
+        if (reference.AllCollapsed)
+        {
+            reference.ToggleAllCommand.Execute(null);
+            Dispatcher.UIThread.RunJobs();
+        }
     }
 
     private static FeatureRowViewModel Row(ReferenceViewModel reference, string client) =>
@@ -140,6 +156,7 @@ public sealed class MainWindowTests : IDisposable
             Assert.NotNull(main.Editor);
             if (main.Editor is ReferenceViewModel reference)
             {
+                ExpandAll(reference);
                 reference.Selected = Row(reference, "W1");
             }
             if (main.Editor is TechScreensViewModel techScreens)
@@ -431,6 +448,55 @@ public sealed class MainWindowTests : IDisposable
         Assert.Empty(reference.Items.OfType<FeatureRowViewModel>());
         reference.ToggleAllCommand.Execute(null);
         Assert.Equal(count, reference.Items.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task OpenReference_FirstTime_ShowsAllCollapsed()
+    {
+        var (_, main, _) = await Open();
+
+        var reference = ShowReference(main, expandAll: false);
+
+        Assert.True(reference.AllCollapsed);
+        Assert.NotEmpty(reference.Items.OfType<BlockHeaderViewModel>());
+        Assert.Empty(reference.Items.OfType<FeatureRowViewModel>());
+    }
+
+    [AvaloniaFact]
+    public async Task SwitchReference_ExpandedTechnologies_RemembersEachReference()
+    {
+        var (_, main, _) = await Open();
+        bool Expanded(ReferenceViewModel reference, int technology) =>
+            reference.Items.OfType<BlockHeaderViewModel>().Single(h => h.Technology == technology).IsExpanded;
+
+        var first = ShowReference(main, 1, expandAll: false);
+        first.Toggle(2);
+        Assert.True(Expanded(first, 2));
+
+        // La otra referencia tiene su propio estado: sigue toda plegada.
+        var second = ShowReference(main, 2, expandAll: false);
+        Assert.True(second.AllCollapsed);
+        second.Toggle(3);
+
+        // Al volver, cada una está como se dejó.
+        first = ShowReference(main, 1, expandAll: false);
+        Assert.True(Expanded(first, 2));
+        Assert.False(Expanded(first, 3));
+        second = ShowReference(main, 2, expandAll: false);
+        Assert.True(Expanded(second, 3));
+        Assert.False(Expanded(second, 2));
+
+        // Deshacer no lo pierde.
+        Row(second, "MARCA").FeatureId = "10099";
+        main.UndoCommand.Execute(null);
+        Assert.True(Expanded(Assert.IsType<ReferenceViewModel>(main.Editor), 3));
+
+        // Al abrir un proyecto se empieza otra vez con todo plegado.
+        var path = Path.Combine(_dir, "PLEGADO.fitproj");
+        Storage.SaveProject(main.Session.Project, path);
+        main.Session.Open(path);
+        Assert.True(ShowReference(main, 1, expandAll: false).AllCollapsed);
+        Assert.True(ShowReference(main, 2, expandAll: false).AllCollapsed);
     }
 
     [AvaloniaFact]

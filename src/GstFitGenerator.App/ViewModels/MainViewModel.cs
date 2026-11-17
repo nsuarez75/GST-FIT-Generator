@@ -65,6 +65,7 @@ public sealed partial class MainViewModel : ObservableObject
         Settings = settings;
         _saveSettings = saveSettings;
         Session.Changed += OnChanged;
+        Session.ProjectReplaced += ExpandedTechnologies.Clear;
         Session.Reset += Rebuild;
         Rebuild();
     }
@@ -79,8 +80,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---------------------------------------------------------------- árbol y editor
 
-    // Tecnologías contraídas en la vista de cada referencia (por número de referencia). Solo mientras la app está abierta.
-    public Dictionary<int, HashSet<int>> CollapsedTechnologies { get; } = [];
+    // Tecnologías desplegadas en la vista de cada referencia (por número de referencia). Las que no están aquí salen
+    // plegadas, así que una referencia que no se ha abierto todavía sale con todas plegadas. Solo mientras la app está abierta.
+    public Dictionary<int, HashSet<int>> ExpandedTechnologies { get; } = [];
 
     // Editor de referencia que había antes de rehacer el árbol (deshacer, rehacer), para que el nuevo siga en su sitio.
     private ReferenceViewModel? _previousReference;
